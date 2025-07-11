@@ -21,8 +21,8 @@ Before submitting your design, please check:
 
 Please raise a pull request against https://github.com/MichaelBell/ttsky25a-tinyQV adding your peripheral:
 - Add your verilog module to src/user_peripherals.  If you have multiple modules create a subdirectory.
-- Add your peripheral to the "Byte interface peripherals" section in src/peripherals.v, ask for help on Discord or in the PR if you're unsure how to do this.
-- Add your test file to test/user_peripherals.  You will need to add the peripheral number to the TinyQV constructor, this is the simple peripheral index plus 16.
+- Add your peripheral to the "Full interface peripherals" section in src/peripherals.v, ask for help on Discord or in the PR if you're unsure how to do this.
+- Add your test file to test/user_peripherals.  You will need to add the peripheral number to the TinyQV constructor.
 - Add your docs to docs/user_peripherals.
 
 ## Testing your design with TinyQV
