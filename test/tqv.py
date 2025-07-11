@@ -24,16 +24,40 @@ class TinyQV:
         self.dut.rst_n.value = 0
         await ClockCycles(self.dut.clk, 10)
         self.dut.rst_n.value = 1  
-        assert self.dut.uio_oe.value == 0b00001000
+        assert self.dut.uio_oe.value == 0b00001011
 
-    # Write a value to a register in your design
+    # Write a value to a byte register in your design
     # reg is the address of the register in the range 0-15
     # value is the value to be written, in the range 0-255
-    async def write_reg(self, reg, value):
-        await spi_write_cpha0(self.dut.clk, self.dut.uio_in, reg, value)
+    async def write_byte_reg(self, reg, value):
+        await spi_write_cpha0(self.dut.clk, self.dut.uio_in, reg, value, 0)
 
-    # Read the value of a register from your design
+    # Read the value of a byte register from your design
     # reg is the address of the register in the range 0-15
     # The returned value is the data read from the register, in the range 0-255
-    async def read_reg(self, reg):
-        return await spi_read_cpha0(self.dut.clk, self.dut.uio_in, self.dut.uio_out, reg, 0)
+    async def read_byte_reg(self, reg):
+        return await spi_read_cpha0(self.dut.clk, self.dut.uio_in, self.dut.uio_out, reg, 0, 0)
+
+    # Write a value to a half word register in your design
+    # reg is the address of the register in the range 0-15
+    # value is the value to be written, in the range 0-65535
+    async def write_hword_reg(self, reg, value):
+        await spi_write_cpha0(self.dut.clk, self.dut.uio_in, reg, value, 1)
+
+    # Read the value of a half word register from your design
+    # reg is the address of the register in the range 0-15
+    # The returned value is the data read from the register, in the range 0-65535
+    async def read_hword_reg(self, reg):
+        return await spi_read_cpha0(self.dut.clk, self.dut.uio_in, self.dut.uio_out, reg, 0, 1)
+
+    # Write a value to a word register in your design
+    # reg is the address of the register in the range 0-15
+    # value is the value to be written
+    async def write_word_reg(self, reg, value):
+        await spi_write_cpha0(self.dut.clk, self.dut.uio_in, reg, value, 2)
+
+    # Read the value of a word register from your design
+    # reg is the address of the register in the range 0-15
+    # The returned value is the data read from the register
+    async def read_word_reg(self, reg):
+        return await spi_read_cpha0(self.dut.clk, self.dut.uio_in, self.dut.uio_out, reg, 0, 2)

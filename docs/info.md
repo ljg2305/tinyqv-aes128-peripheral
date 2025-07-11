@@ -17,7 +17,7 @@ Document the registers that are used to interact with your peripheral
 
 | Address | Name  | Access | Description                                                         |
 |---------|-------|--------|---------------------------------------------------------------------|
-| 0x00    | DATA  | R/W    | A byte of data                                                      |
+| 0x00    | DATA  | R/W    | A word of data                                                      |
 
 ## How to test
 

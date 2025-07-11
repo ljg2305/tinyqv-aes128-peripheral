@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2024 Caio Alonso da Costa
+ * Copyright (c) 2025 Michael Bell
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -17,7 +18,10 @@ module spi_reg #(
     output logic [ADDR_W-1:0] reg_addr,
     input  logic [REG_W-1:0] reg_data_i,
     output logic [REG_W-1:0] reg_data_o,
+    output logic reg_addr_v,
     output logic reg_data_o_dv,
+    output logic reg_rw,
+    output logic [1:0] txn_width,
     input  logic [7:0] status
 );
 
@@ -85,6 +89,8 @@ module spi_reg #(
   logic sample_addr;
   logic sample_data;
 
+  assign reg_addr_v = tx_buffer_load;
+
   // Next state logic
   always_comb begin
     // default assignments
@@ -100,7 +106,7 @@ module spi_reg #(
         end
       end
       STATE_ADDR : begin
-        if (rx_buffer_counter == 4'd8) begin
+        if (rx_buffer_counter == REG_W) begin
           sample_addr = 1'b1;
           next_state = STATE_CMD;
         end else if (eof == 1'b1) begin
@@ -117,7 +123,7 @@ module spi_reg #(
         end
       end
       STATE_RX_DATA : begin
-        if (rx_buffer_counter == 4'd8) begin
+        if (rx_buffer_counter == REG_W) begin
           sample_data = 1'b1;
           next_state = STATE_IDLE;
         end else if (eof == 1'b1) begin
@@ -127,7 +133,7 @@ module spi_reg #(
       STATE_TX_DATA : begin
         if (tx_buffer_counter == 4'd0) begin
           tx_buffer_load = 1'b1;
-        end else if (tx_buffer_counter == 4'd8) begin
+        end else if (tx_buffer_counter == REG_W) begin
           next_state = STATE_IDLE;
         end else if (eof == 1'b1) begin
           next_state = STATE_IDLE;
@@ -156,7 +162,7 @@ module spi_reg #(
   end
 
   // RX General counter
-  logic [3:0] rx_buffer_counter;
+  logic [5:0] rx_buffer_counter;
 
   // RX Buffer Counter
   always_ff @(negedge(rstb) or posedge(clk)) begin
@@ -164,7 +170,7 @@ module spi_reg #(
       rx_buffer_counter <= '0;
     end else begin
       if (ena == 1'b1) begin
-        if (rx_buffer_counter == 4'd8) begin
+        if (rx_buffer_counter == REG_W) begin
           rx_buffer_counter <= '0;
         end else if (spi_data_sample == 1'b1) begin
           rx_buffer_counter <= rx_buffer_counter + 1'b1;
@@ -175,18 +181,19 @@ module spi_reg #(
 
   // Addr and Read/Write Command register
   logic [ADDR_W-1:0] addr;
-  logic reg_rw;
 
   // Addr and Read/Write Command Registers
   always_ff @(negedge(rstb) or posedge(clk)) begin
     if (!rstb) begin
       addr <= '0;
       reg_rw <= '0;
+      txn_width <= 2'b11;
     end else begin
       if (ena == 1'b1) begin
         if (sample_addr == 1'b1) begin
           addr <= rx_buffer[ADDR_W-1:0];
           reg_rw <= rx_buffer[REG_W-1];
+          txn_width <= rx_buffer[REG_W-2:REG_W-3];
         end
       end
     end
@@ -213,7 +220,7 @@ module spi_reg #(
   end
 
   // TX General counter
-  logic [3:0] tx_buffer_counter;
+  logic [5:0] tx_buffer_counter;
     
   // TX Buffer counter
   always_ff @(negedge(rstb) or posedge(clk)) begin
@@ -221,7 +228,7 @@ module spi_reg #(
       tx_buffer_counter <= '0;
     end else begin
       if (ena == 1'b1) begin
-        if (tx_buffer_counter == 4'd8) begin
+        if (tx_buffer_counter == REG_W) begin
           tx_buffer_counter <= '0;
         end else if (spi_data_sample == 1'b1) begin
           tx_buffer_counter <= tx_buffer_counter + 1'b1;

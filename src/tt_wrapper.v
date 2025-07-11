@@ -18,10 +18,13 @@ module tt_um_tqv_peripheral_harness (
 );
 
   // SPI access to registers
-  wire [3:0] address;
-  wire [7:0] data_in;  // Data in to peripheral
-  wire [7:0] data_out; // Data out from peripheral
-  wire data_valid;
+  wire [5:0] address;
+  wire [31:0] data_in;  // Data in to peripheral
+  wire [31:0] data_out; // Data out from peripheral
+  reg [1:0] data_write_n;
+  reg [1:0] data_read_n;
+  wire data_ready;
+  wire user_interrupt;
 
   // Peripherals get synchronized ui_in.
   reg [7:0] ui_in_sync;
@@ -41,10 +44,20 @@ module tt_um_tqv_peripheral_harness (
     .ui_in(ui_in_sync),
     .uo_out(uo_out),
     .address(address),
-    .data_write(data_valid),
     .data_in(data_in),
-    .data_out(data_out)
+    .data_write_n(data_write_n),
+    .data_read_n(data_read_n),
+    .data_out(data_out),
+    .data_ready(data_ready),
+    .user_interrupt(uio_out[0])
   );
+
+  // SPI data indications
+  wire addr_valid;
+  wire data_valid;
+  wire data_rw;
+  wire [1:0] txn_n;
+  reg [31:0] data_out_masked;
 
   // SPI interface
   wire spi_cs_n;
@@ -66,7 +79,7 @@ module tt_um_tqv_peripheral_harness (
   synchronizer #(.STAGES(2), .WIDTH(1)) synchronizer_spi_mosi_inst (.clk(clk), .data_in(spi_mosi), .data_out(spi_mosi_sync));  
 
   // The SPI instance
-  spi_reg #(.ADDR_W(4)) i_spi_reg(
+  spi_reg #(.ADDR_W(6), .REG_W(32)) i_spi_reg(
     .clk(clk),
     .rstb(rst_reg_n),
     .ena(ena),
@@ -75,19 +88,43 @@ module tt_um_tqv_peripheral_harness (
     .spi_clk(spi_clk_sync),
     .spi_cs_n(spi_cs_n_sync),
     .reg_addr(address),
-    .reg_data_i(data_out),
+    .reg_data_i(data_out_masked),
     .reg_data_o(data_in),
+    .reg_addr_v(addr_valid),
     .reg_data_o_dv(data_valid),
+    .reg_rw(data_rw),
+    .txn_width(txn_n),
     .status(8'h0)
   );
+
+  always @(*) begin
+      data_write_n = 2'b11;
+      data_read_n = 2'b11;
+
+      if (data_valid && data_rw) begin
+        data_write_n = txn_n;
+      end
+      if (addr_valid && !data_rw) begin
+        data_read_n = txn_n;
+      end
+
+      data_out_masked = data_out;
+      if (txn_n[1] == 1'b0) data_out_masked[31:16] = 0;
+      if (txn_n == 2'b00) data_out_masked[15:8] = 0;
+  end
 
   // Assign outputs
   assign uio_out[3] = spi_miso;
   assign uio_oe[3] = 1;
+  assign uio_out[0] = user_interrupt;
+  assign uio_oe[0] = 1;
+  assign uio_out[1] = data_ready;
+  assign uio_oe[1] = 1;
+
   assign uio_out[7:4] = 0;
-  assign uio_out[2:0] = 0;
+  assign uio_out[2] = 0;
   assign uio_oe[7:4] = 0;
-  assign uio_oe[2:0] = 0;
+  assign uio_oe[2] = 0;
 
   // Ignore unused inputs
   wire _unused = &{uio_in[7], uio_in[3:0], 1'b0};
