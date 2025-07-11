@@ -53,3 +53,20 @@ async def test_project(dut):
     # A second write should work
     await tqv.write_word_reg(0, 40)
     assert dut.uo_out.value == 70
+
+    # Test the interrupt, generated when ui_in[6] goes high
+    dut.ui_in[6].value = 1
+    await ClockCycles(dut.clk, 1)
+    dut.ui_in[6].value = 0
+
+    # Interrupt asserted
+    await ClockCycles(dut.clk, 3)
+    assert dut.uio_out[0].value == 1
+
+    # Interrupt doesn't clear
+    await ClockCycles(dut.clk, 10)
+    assert dut.uio_out[0].value == 1
+    
+    # Write bottom bit of address 8 high to clear
+    await tqv.write_byte_reg(8, 1)
+    assert dut.uio_out[0].value == 0

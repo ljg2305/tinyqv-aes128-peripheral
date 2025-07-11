@@ -149,7 +149,7 @@ async def spi_write_cpha0 (clk, port, address, data, width):
   await ClockCycles(clk, 10)  
 
 
-async def spi_read_cpha0 (clk, port_in, port_out, address, data, width):
+async def spi_read_cpha0 (clk, port_in, port_out, data_ready, address, data, width):
   
   temp = port_in.value;
   result = pull_cs_high(temp)
@@ -219,6 +219,12 @@ async def spi_read_cpha0 (clk, port_in, port_out, address, data, width):
 
   miso_byte = 0
   miso_bit = 0
+
+  data_ready_delay = 0
+  while data_ready.value == 0:
+    data_ready_delay += 1
+    assert data_ready_delay < 100
+    await ClockCycles(clk, 1)
 
   iterator = 31
   while iterator >= 0:
