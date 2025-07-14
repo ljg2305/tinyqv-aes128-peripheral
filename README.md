@@ -6,9 +6,13 @@
 
 ## What is TinyQV
 
-[TinyQV](https://github.com/MichaelBell/tinyQV) is a Risc-V CPU designed for Tiny Tapeout.
+[TinyQV](https://github.com/TinyTapeout/ttsky25a-tinyQV) is a Risc-V CPU designed for Tiny Tapeout.
 
 This template helps you create peripherals that can be integrated with TinyQV.
+
+Implement your peripheral by replacing the implementation in the [example](src/peripheral.v) with your own implementation.  You may create additional modules.
+
+Test your peripheral by replacing and extending the [example test](test/test.py).
 
 ## Submission checklist
 
@@ -19,7 +23,7 @@ Before submitting your design, please check:
 
 ## Submission process
 
-Please raise a pull request against https://github.com/MichaelBell/ttsky25a-tinyQV adding your peripheral:
+Please raise a pull request against https://github.com/TinyTapeout/ttsky25a-tinyQV adding your peripheral:
 - Add your verilog module to src/user_peripherals.  If you have multiple modules create a subdirectory.
 - Add your peripheral to the "Full interface peripherals" section in src/peripherals.v, ask for help on Discord or in the PR if you're unsure how to do this.
 - Add your test file to test/user_peripherals.  You will need to add the peripheral number to the TinyQV constructor.
