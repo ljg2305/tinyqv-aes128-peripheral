@@ -6,8 +6,8 @@
 `default_nettype none
 
 module tqvp_example (
-    input         clk,
-    input         rst_n,
+    input         clk,          // Clock - the TinyQV project clock is normally set to 64MHz.
+    input         rst_n,        // Reset_n - low to reset.
 
     input  [7:0]  ui_in,        // The input PMOD, always available.  Note that ui_in[7] is normally used for UART RX.
                                 // The inputs are synchronized to the clock, note this will introduce 2 cycles of delay on the inputs.
