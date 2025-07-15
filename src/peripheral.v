@@ -25,7 +25,7 @@ module tqvp_example (
     output [31:0] data_out,     // Data out from the peripheral, bottom 8, 16 or all 32 bits are valid on read when data_ready is high.
     output        data_ready,
 
-    output        user_interrupt  // Each user peripheral gets an interrupt?  There may be a limit to how many we can easily support.
+    output        user_interrupt  // Dedicated interrupt request for this peripheral
 );
 
     // Implement a 32-bit read/write register at address 0
