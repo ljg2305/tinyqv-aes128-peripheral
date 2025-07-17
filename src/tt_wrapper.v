@@ -36,8 +36,8 @@ module tt_um_tqv_peripheral_harness (
   /* verilator lint_on SYNCASYNCNET */
   always @(negedge clk) rst_reg_n <= rst_n;
 
-  // The peripheral under test - change the module name here
-  // to match your preipheral.
+  // The peripheral under test.
+  // **** Change the module name from tqvp_example to match your peripheral. ****
   tqvp_example user_peripheral(
     .clk(clk),
     .rst_n(rst_reg_n),
