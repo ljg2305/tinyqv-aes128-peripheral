@@ -203,16 +203,21 @@ module spi_reg #(
   logic [REG_W-1:0] data;
   logic dv;
 
+  // kdp1965: Direct assignment instead of re-sampling to save 32 flops.
+  //          We are at the end of the SPI transaction and rx_buffer
+  //          will be stable, so no need for the extra 32-flop buffer.
+  assign data = rx_buffer;
+
     // Data and DataValid (dv) Registers
   always_ff @(negedge(rstb) or posedge(clk)) begin
     if (!rstb) begin
-      data <= '0;
+//      data <= '0;
       dv <= '0;
     end else begin
       if (ena == 1'b1) begin
         dv <= '0;
         if (sample_data == 1'b1) begin
-          data <= rx_buffer;
+//          data <= rx_buffer;
           dv <= (1'b1 & reg_rw);
         end
       end
