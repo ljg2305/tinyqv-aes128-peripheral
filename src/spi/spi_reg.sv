@@ -25,12 +25,6 @@ module spi_reg #(
     input  logic [7:0] status
 );
 
-  // Map to outputs
-  assign reg_addr = addr;
-  assign reg_data_o = data;
-  assign reg_data_o_dv = dv;
-  assign spi_miso = tx_buffer[REG_W-1];
-
   // Start of frame - negedge of spi_cs_n
   logic sof;
   // Pulse on start of frame
@@ -88,8 +82,6 @@ module spi_reg #(
   logic tx_buffer_load;
   logic sample_addr;
   logic sample_data;
-
-  assign reg_addr_v = tx_buffer_load;
 
   // Next state logic
   always_comb begin
@@ -199,25 +191,28 @@ module spi_reg #(
     end
   end
 
-  // Data register and data valid strobe
-  logic [REG_W-1:0] data;
+  // Address output
+  assign reg_addr = addr;
+  assign reg_addr_v = tx_buffer_load;
+
+  // Data valid strobe
   logic dv;
 
-  // kdp1965: Direct assignment instead of re-sampling to save 32 flops.
-  //          We are at the end of the SPI transaction and rx_buffer
-  //          will be stable, so no need for the extra 32-flop buffer.
-  assign data = rx_buffer;
+  // RX buffer can be directly assigned to the data output.  
+  // Previously this re-sampled but that cost 32 flops.
+  // DV is only indicated at the end of the SPI transaction and rx_buffer will be stable, 
+  // so there's no need for the extra 32-flop buffer.
+  assign reg_data_o = rx_buffer;
+  assign reg_data_o_dv = dv;
 
-    // Data and DataValid (dv) Registers
+  // DataValid (dv) Registers
   always_ff @(negedge(rstb) or posedge(clk)) begin
     if (!rstb) begin
-//      data <= '0;
       dv <= '0;
     end else begin
       if (ena == 1'b1) begin
         dv <= '0;
         if (sample_data == 1'b1) begin
-//          data <= rx_buffer;
           dv <= (1'b1 & reg_rw);
         end
       end
@@ -243,5 +238,8 @@ module spi_reg #(
       end
     end
   end
+
+  // MISO output
+  assign spi_miso = tx_buffer[REG_W-1];
 
 endmodule
