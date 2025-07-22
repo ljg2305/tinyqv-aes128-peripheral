@@ -21,8 +21,7 @@ module spi_reg #(
     output logic reg_addr_v,
     output logic reg_data_o_dv,
     output logic reg_rw,
-    output logic [1:0] txn_width,
-    input  logic [7:0] status
+    output logic [1:0] txn_width
 );
 
   // Start of frame - negedge of spi_cs_n
@@ -229,7 +228,7 @@ module spi_reg #(
     end else begin
       if (ena == 1'b1) begin
         if (sof == 1'b1) begin
-          tx_buffer <= status;
+          tx_buffer <= '0;
         end else if (tx_buffer_load == 1'b1) begin
           tx_buffer <= reg_data_i;
         end else if (spi_data_change == 1'b1) begin

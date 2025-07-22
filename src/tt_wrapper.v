@@ -93,8 +93,7 @@ module tt_um_tqv_peripheral_harness (
     .reg_addr_v(addr_valid),
     .reg_data_o_dv(data_valid),
     .reg_rw(data_rw),
-    .txn_width(txn_n),
-    .status(8'h0)
+    .txn_width(txn_n)
   );
 
   always @(*) begin
