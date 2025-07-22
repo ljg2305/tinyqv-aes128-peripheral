@@ -82,7 +82,7 @@ module tt_um_tqv_peripheral_harness (
   spi_reg #(.ADDR_W(6), .REG_W(32)) i_spi_reg(
     .clk(clk),
     .rstb(rst_reg_n),
-    .ena(ena),
+    .ena(1'b1),
     .spi_mosi(spi_mosi_sync),
     .spi_miso(spi_miso),
     .spi_clk(spi_clk_sync),
@@ -127,6 +127,6 @@ module tt_um_tqv_peripheral_harness (
   assign uio_oe[2] = 0;
 
   // Ignore unused inputs
-  wire _unused = &{uio_in[7], uio_in[3:0], 1'b0};
+  wire _unused = &{ena, uio_in[7], uio_in[3:0], 1'b0};
 
 endmodule
