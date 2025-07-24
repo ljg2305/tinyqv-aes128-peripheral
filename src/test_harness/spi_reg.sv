@@ -19,6 +19,7 @@ module spi_reg #(
     input  logic [REG_W-1:0] reg_data_i,
     output logic [REG_W-1:0] reg_data_o,
     output logic reg_addr_v,
+    input  logic reg_data_i_dv,
     output logic reg_data_o_dv,
     output logic reg_rw,
     output logic [1:0] txn_width
@@ -60,7 +61,7 @@ module spi_reg #(
 
   // FSM states type
   typedef enum logic [2:0] {
-    STATE_IDLE, STATE_ADDR, STATE_CMD, STATE_RX_DATA, STATE_TX_DATA
+    STATE_IDLE, STATE_ADDR, STATE_CMD, STATE_RX_DATA, STATE_TX_LOAD, STATE_TX_DATA
   } fsm_state;
 
   // FSM states
@@ -109,7 +110,7 @@ module spi_reg #(
       end
       STATE_CMD : begin
         if (reg_rw == 1'b0) begin
-          next_state = STATE_TX_DATA;
+          next_state = STATE_TX_LOAD;
         end else if (reg_rw == 1'b1) begin
           next_state = STATE_RX_DATA;
         end else if (eof == 1'b1) begin
@@ -124,10 +125,14 @@ module spi_reg #(
           next_state = STATE_IDLE;
         end
       end
+      STATE_TX_LOAD : begin
+        tx_buffer_load = 1'b1;
+        if (reg_data_i_dv) begin
+          next_state = STATE_TX_DATA;
+        end
+      end
       STATE_TX_DATA : begin
-        if (buffer_counter == '0) begin
-          tx_buffer_load = 1'b1;
-        end else if (buffer_counter == REG_W[5:0]) begin
+        if (buffer_counter == REG_W[5:0]) begin
           next_state = STATE_IDLE;
         end else if (eof == 1'b1) begin
           next_state = STATE_IDLE;
@@ -152,10 +157,11 @@ module spi_reg #(
           STATE_IDLE : begin
             txn_buffer <= '0;
           end
+          STATE_TX_LOAD : begin
+            txn_buffer <= reg_data_i;
+          end
           STATE_TX_DATA : begin
-            if (tx_buffer_load == 1'b1) begin
-              txn_buffer <= reg_data_i;
-            end else if (spi_data_change == 1'b1) begin
+            if (spi_data_change == 1'b1 && buffer_counter != 6'd0) begin
               txn_buffer <= {txn_buffer[REG_W-2:0], 1'b0};
             end
           end

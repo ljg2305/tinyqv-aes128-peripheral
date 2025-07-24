@@ -52,23 +52,25 @@ def spi_mosi_low(value):
 def spi_miso_read(port):
   return (get_bit (port.value, 3) >> 3)
 
+SPI_HALF_CYCLE_DELAY = 2
+
 async def spi_write_cpha0 (clk, port, address, data, width):
 
   temp = port.value;
   result = pull_cs_high(temp)
   port.value = result
-  await ClockCycles(clk, 10)
+  await ClockCycles(clk, SPI_HALF_CYCLE_DELAY)
 
   # Pull CS low + Write command bit - bit 31 - MSBIT in first word
   temp = port.value;
   result = pull_cs_low(temp)
   result2 = spi_mosi_high(result)
   port.value = result2
-  await ClockCycles(clk, 10)
+  await ClockCycles(clk, SPI_HALF_CYCLE_DELAY)
   temp = port.value;
   result = spi_clk_invert(temp)
   port.value = result
-  await ClockCycles(clk, 10)
+  await ClockCycles(clk, SPI_HALF_CYCLE_DELAY)
 
   # Next two bits indicate txn width
   iterator = 1
@@ -81,11 +83,11 @@ async def spi_write_cpha0 (clk, port, address, data, width):
     else:
       result2 = spi_mosi_high(result)
     port.value = result2
-    await ClockCycles(clk, 10)
+    await ClockCycles(clk, SPI_HALF_CYCLE_DELAY)
     temp = port.value;
     result = spi_clk_invert(temp)
     port.value = result
-    await ClockCycles(clk, 10)
+    await ClockCycles(clk, SPI_HALF_CYCLE_DELAY)
     iterator -= 1
 
   iterator = 0
@@ -95,11 +97,11 @@ async def spi_write_cpha0 (clk, port, address, data, width):
     result = spi_clk_invert(temp)
     result2 = spi_mosi_low(result)
     port.value = result2
-    await ClockCycles(clk, 10)
+    await ClockCycles(clk, SPI_HALF_CYCLE_DELAY)
     temp = port.value;
     result = spi_clk_invert(temp)
     port.value = result
-    await ClockCycles(clk, 10)
+    await ClockCycles(clk, SPI_HALF_CYCLE_DELAY)
     iterator += 1
 
   iterator = 5
@@ -113,11 +115,11 @@ async def spi_write_cpha0 (clk, port, address, data, width):
     else:
       result2 = spi_mosi_high(result)
     port.value = result2
-    await ClockCycles(clk, 10)
+    await ClockCycles(clk, SPI_HALF_CYCLE_DELAY)
     temp = port.value;
     result = spi_clk_invert(temp)
     port.value = result
-    await ClockCycles(clk, 10)
+    await ClockCycles(clk, SPI_HALF_CYCLE_DELAY)
     iterator -= 1
 
   iterator = 31
@@ -131,22 +133,22 @@ async def spi_write_cpha0 (clk, port, address, data, width):
     else:
       result2 = spi_mosi_high(result)
     port.value = result2
-    await ClockCycles(clk, 10)
+    await ClockCycles(clk, SPI_HALF_CYCLE_DELAY)
     temp = port.value;
     result = spi_clk_invert(temp)
     port.value = result
-    await ClockCycles(clk, 10)
+    await ClockCycles(clk, SPI_HALF_CYCLE_DELAY)
     iterator -= 1
 
   temp = port.value;
   result = spi_clk_invert(temp)
   port.value = result
-  await ClockCycles(clk, 10)
+  await ClockCycles(clk, SPI_HALF_CYCLE_DELAY)
 
   temp = port.value;
   result = pull_cs_high(temp)
   port.value = result
-  await ClockCycles(clk, 10)  
+  await ClockCycles(clk, SPI_HALF_CYCLE_DELAY)  
 
 
 async def spi_read_cpha0 (clk, port_in, port_out, data_ready, address, data, width):
@@ -154,18 +156,18 @@ async def spi_read_cpha0 (clk, port_in, port_out, data_ready, address, data, wid
   temp = port_in.value;
   result = pull_cs_high(temp)
   port_in.value = result
-  await ClockCycles(clk, 10)
+  await ClockCycles(clk, SPI_HALF_CYCLE_DELAY)
 
   # Pull CS low + Read command bit - bit 7 - MSBIT in first byte
   temp = port_in.value;
   result = pull_cs_low(temp)
   result2 = spi_mosi_low(result)
   port_in.value = result2
-  await ClockCycles(clk, 10)
+  await ClockCycles(clk, SPI_HALF_CYCLE_DELAY)
   temp = port_in.value;
   result = spi_clk_invert(temp)
   port_in.value = result
-  await ClockCycles(clk, 10)
+  await ClockCycles(clk, SPI_HALF_CYCLE_DELAY)
 
   # Next two bits indicate txn width
   iterator = 1
@@ -178,11 +180,11 @@ async def spi_read_cpha0 (clk, port_in, port_out, data_ready, address, data, wid
     else:
       result2 = spi_mosi_high(result)
     port_in.value = result2
-    await ClockCycles(clk, 10)
+    await ClockCycles(clk, SPI_HALF_CYCLE_DELAY)
     temp = port_in.value;
     result = spi_clk_invert(temp)
     port_in.value = result
-    await ClockCycles(clk, 10)
+    await ClockCycles(clk, SPI_HALF_CYCLE_DELAY)
     iterator -= 1
 
   iterator = 0
@@ -192,11 +194,11 @@ async def spi_read_cpha0 (clk, port_in, port_out, data_ready, address, data, wid
     result = spi_clk_invert(temp)
     result2 = spi_mosi_low(result)
     port_in.value = result2
-    await ClockCycles(clk, 10)
+    await ClockCycles(clk, SPI_HALF_CYCLE_DELAY)
     temp = port_in.value;
     result = spi_clk_invert(temp)
     port_in.value = result
-    await ClockCycles(clk, 10)
+    await ClockCycles(clk, SPI_HALF_CYCLE_DELAY)
     iterator += 1
 
   iterator = 5
@@ -210,11 +212,11 @@ async def spi_read_cpha0 (clk, port_in, port_out, data_ready, address, data, wid
     else:
       result2 = spi_mosi_high(result)
     port_in.value = result2
-    await ClockCycles(clk, 10)
+    await ClockCycles(clk, SPI_HALF_CYCLE_DELAY)
     temp = port_in.value;
     result = spi_clk_invert(temp)
     port_in.value = result
-    await ClockCycles(clk, 10)
+    await ClockCycles(clk, SPI_HALF_CYCLE_DELAY)
     iterator -= 1
 
   miso_byte = 0
@@ -237,23 +239,23 @@ async def spi_read_cpha0 (clk, port_in, port_out, data_ready, address, data, wid
     else:
       result2 = spi_mosi_high(result)
     port_in.value = result2
-    await ClockCycles(clk, 10)
-    miso_bit = spi_miso_read(port_out)
-    miso_byte = miso_byte | (miso_bit << iterator)
+    await ClockCycles(clk, SPI_HALF_CYCLE_DELAY)
     temp = port_in.value;
     result = spi_clk_invert(temp)
     port_in.value = result
-    await ClockCycles(clk, 10)
+    await ClockCycles(clk, SPI_HALF_CYCLE_DELAY)
+    miso_bit = spi_miso_read(port_out)
+    miso_byte = miso_byte | (miso_bit << iterator)
     iterator -= 1
 
   temp = port_in.value;
   result = spi_clk_invert(temp)
   port_in.value = result
-  await ClockCycles(clk, 10)
+  await ClockCycles(clk, SPI_HALF_CYCLE_DELAY)
 
   temp = port_in.value;
   result = pull_cs_high(temp)
   port_in.value = result
-  await ClockCycles(clk, 10)
+  await ClockCycles(clk, SPI_HALF_CYCLE_DELAY)
 
   return miso_byte

@@ -91,6 +91,7 @@ module tt_um_tqv_peripheral_harness (
     .reg_data_i(data_out_masked),
     .reg_data_o(data_in),
     .reg_addr_v(addr_valid),
+    .reg_data_i_dv(data_ready),
     .reg_data_o_dv(data_valid),
     .reg_rw(data_rw),
     .txn_width(txn_n)
