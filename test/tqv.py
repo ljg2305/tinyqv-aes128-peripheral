@@ -11,7 +11,7 @@ from tqv_reg import spi_write_cpha0, spi_read_cpha0
 # is used that reads and writes the registers using Risc-V commands:
 # https://github.com/MichaelBell/ttsky25a-tinyQV/blob/main/test/tqv.py
 class TinyQV:
-    def __init__(self, dut):
+    def __init__(self, dut, peripheral_num):
         self.dut = dut
 
     # Reset the design, this reset will initialize TinyQV and connect
@@ -61,3 +61,7 @@ class TinyQV:
     # The returned value is the data read from the register
     async def read_word_reg(self, reg):
         return await spi_read_cpha0(self.dut.clk, self.dut.uio_in, self.dut.uio_out, self.dut.uio_out[1], reg, 0, 2)
+    
+    # Check whether the user interrupt is asserted
+    async def is_interrupt_asserted(self):
+        return self.dut.uio_out[0].value == 1

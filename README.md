@@ -23,11 +23,65 @@ Before submitting your design, please check:
 
 ## Submission process
 
-Please raise a pull request against https://github.com/TinyTapeout/ttsky25a-tinyQV adding your peripheral:
-- Add your verilog module to src/user_peripherals.  If you have multiple modules create a subdirectory.
-- Add your peripheral to the "Full interface peripherals" section in src/peripherals.v, ask for help on Discord or in the PR if you're unsure how to do this.
-- Add your test file to test/user_peripherals.  You will need to add the peripheral number to the TinyQV constructor.
-- Add your docs to docs/user_peripherals.
+Please raise a pull request against https://github.com/TinyTapeout/ttsky25a-tinyQV adding your peripheral.  Link to your peripheral repo in the PR.
+
+If you have any trouble following the steps below, ask in the Tiny Tapeout Discord or in the PR.
+
+### Add your verilog source to src/user_peripherals.
+
+* If you have multiple modules create a subdirectory.
+* Add each source file to the info.yaml source_files section
+
+### Add your peripheral to the "Full interface peripherals" section in src/peripherals.v
+
+* Each peripheral needs its own index, and you'll have to update that in 6 different places (the example shows peripheral index of 4) :
+  * `.uo_out(uo_out_from_user_peri[4]),`
+  * `.data_write_n(data_write_n    | {2{~peri_user[4]}}),`
+  * `.data_read_n(data_read_n_peri | {2{~peri_user[4]}}),`
+  * `.data_out(data_from_user_peri[4]),`
+  * `.data_ready(data_ready_from_user_peri[4]),`
+  * `.user_interrupt(user_interrupts[4])`
+
+### Add your test file to test/user_peripherals.
+
+* Copy the test in to a subdirectory of test/user_peripherals
+* Update your testbench.py to set the PERIPHERAL_NUM to match the value used in peripherals.v.
+* In test/test_basic.mk, include your sources in PROJECT_SOURCES 
+* In test/test_basic.mk, if you are using your own Python modules, extend PYTHONPATH to include them
+* In test/test_prog.mk, include your sources in PROJECT_SOURCES 
+* In test/Makefile, add the name of your test to the all recipe. If your test is called my_peripheral.py add this: `peri-my_peripheral.xml`
+
+To run your test, make sure you have installed the `requirements.txt`, then:
+
+    make peri-my_peripheral.xml
+
+And the compressed waveform will be in `sim_build/rtl/tb.fst`
+
+### Add your docs to docs/user_peripherals.
+
+* Copy your docs/info.md into this folder and rename it appropriately (e.g. my_peripheral.md)
+
+## The peripheral test harness
+
+This template includes a test harness for your peripheral that communicates with the peripheral using SPI.  This allows you to develop and test your peripheral independently of the rest of the Risc-V SoC.
+
+The SPI interface implemented by the test harness operates in 32-bit words.  The command has the format:
+| Bits | Meaning |
+| ---- | ------- |
+| 31    | Read or write command: 1 for a write, 0 for a read |
+| 30-29 | Transaction width 0, 1 or 2 for 8, 16 or 32 bits |
+| 28-6  | Unused |
+| 5-0   | The register address |
+
+For a write the next 32 bit word transmitted is the word to write to the register.  A full 32-bits word is sent even if the requested transaction width is shorter.
+
+For a read, the test harness reads the register and transmits it back to the SPI controller.  Again, a full 32-bit word is used even if a shorter read was performed.
+
+### Additional outputs
+
+In the test harness, the user_interrupt is connected to `uio[0]`, to allow your test to verify interrupt generation.  Use the function `tqv.is_interrupt_asserted()` to check this, so that the same test can work once integrated with the Risc-V core.
+
+The data_ready output is connected to `uio[1]`, and if necessary the test infrastructure will delay the SPI read until this goes high, allowing long read delays to be tested.
 
 ## Testing your design with TinyQV
 
