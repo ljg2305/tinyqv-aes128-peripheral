@@ -139,29 +139,29 @@ module spi_reg #(
     endcase
   end
 
-  // RX Buffer
-  logic [REG_W-1:0] rx_buffer;
+  // Transaction buffer
+  logic [REG_W-1:0] txn_buffer;
 
-  // RX Buffer
+  // Transaction Buffer
   always_ff @(negedge(rstb) or posedge(clk)) begin
     if (!rstb) begin
-      rx_buffer <= '0;
+      txn_buffer <= '0;
     end else begin
       if (ena == 1'b1) begin
         case (state)
           STATE_IDLE : begin
-            rx_buffer <= '0;
+            txn_buffer <= '0;
           end
           STATE_TX_DATA : begin
             if (tx_buffer_load == 1'b1) begin
-              rx_buffer <= reg_data_i;
+              txn_buffer <= reg_data_i;
             end else if (spi_data_change == 1'b1) begin
-              rx_buffer <= {rx_buffer[REG_W-2:0], 1'b0};
+              txn_buffer <= {txn_buffer[REG_W-2:0], 1'b0};
             end
           end
           default : begin
             if (spi_data_sample == 1'b1) begin
-              rx_buffer <= {rx_buffer[REG_W-2:0], spi_mosi};
+              txn_buffer <= {txn_buffer[REG_W-2:0], spi_mosi};
             end
           end
         endcase
@@ -196,9 +196,9 @@ module spi_reg #(
     end else begin
       if (ena == 1'b1) begin
         if (sample_addr == 1'b1) begin
-          addr <= rx_buffer[ADDR_W-1:0];
-          reg_rw <= rx_buffer[REG_W-1];
-          txn_width <= rx_buffer[REG_W-2:REG_W-3];
+          addr <= txn_buffer[ADDR_W-1:0];
+          reg_rw <= txn_buffer[REG_W-1];
+          txn_width <= txn_buffer[REG_W-2:REG_W-3];
         end
       end
     end
@@ -213,9 +213,9 @@ module spi_reg #(
 
   // RX buffer can be directly assigned to the data output.  
   // Previously this re-sampled but that cost 32 flops.
-  // DV is only indicated at the end of the SPI transaction and rx_buffer will be stable, 
+  // DV is only indicated at the end of the SPI transaction and txn_buffer will be stable, 
   // so there's no need for the extra 32-flop buffer.
-  assign reg_data_o = rx_buffer;
+  assign reg_data_o = txn_buffer;
   assign reg_data_o_dv = dv;
 
   // DataValid (dv) Registers
@@ -233,6 +233,6 @@ module spi_reg #(
   end
 
   // MISO output
-  assign spi_miso = state == STATE_TX_DATA ? rx_buffer[REG_W-1] : 1'b0;
+  assign spi_miso = state == STATE_TX_DATA ? txn_buffer[REG_W-1] : 1'b0;
 
 endmodule
