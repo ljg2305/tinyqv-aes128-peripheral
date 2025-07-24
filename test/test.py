@@ -33,10 +33,10 @@ async def test_project(dut):
     dut._log.info("Test project behavior")
 
     # Test register write and read back
-    await tqv.write_word_reg(0, 0x12345678)
+    await tqv.write_word_reg(0, 0x82345678)
     assert await tqv.read_byte_reg(0) == 0x78
     assert await tqv.read_hword_reg(0) == 0x5678
-    assert await tqv.read_word_reg(0) == 0x12345678
+    assert await tqv.read_word_reg(0) == 0x82345678
 
     # Set an input value, in the example this will be added to the register value
     dut.ui_in.value = 30

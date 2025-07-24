@@ -222,6 +222,7 @@ async def spi_read_cpha0 (clk, port_in, port_out, data_ready, address, data, wid
   miso_byte = 0
   miso_bit = 0
 
+  await ClockCycles(clk, 1)
   data_ready_delay = 0
   while data_ready.value == 0:
     data_ready_delay += 1
