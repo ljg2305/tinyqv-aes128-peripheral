@@ -148,9 +148,23 @@ module spi_reg #(
       rx_buffer <= '0;
     end else begin
       if (ena == 1'b1) begin
-        if (spi_data_sample == 1'b1) begin
-          rx_buffer <= {rx_buffer[REG_W-2:0], spi_mosi};
-        end
+        case (state)
+          STATE_IDLE : begin
+            rx_buffer <= '0;
+          end
+          STATE_TX_DATA : begin
+            if (tx_buffer_load == 1'b1) begin
+              rx_buffer <= reg_data_i;
+            end else if (spi_data_change == 1'b1) begin
+              rx_buffer <= {rx_buffer[REG_W-2:0], 1'b0};
+            end
+          end
+          default : begin
+            if (spi_data_sample == 1'b1) begin
+              rx_buffer <= {rx_buffer[REG_W-2:0], spi_mosi};
+            end
+          end
+        endcase
       end
     end
   end
@@ -218,27 +232,7 @@ module spi_reg #(
     end
   end
 
-  // TX Buffer
-  logic [REG_W-1:0] tx_buffer;
-
-  // TX Buffer
-  always_ff @(negedge(rstb) or posedge(clk)) begin
-    if (!rstb) begin
-      tx_buffer <= '0;
-    end else begin
-      if (ena == 1'b1) begin
-        if (sof == 1'b1) begin
-          tx_buffer <= '0;
-        end else if (tx_buffer_load == 1'b1) begin
-          tx_buffer <= reg_data_i;
-        end else if (spi_data_change == 1'b1) begin
-          tx_buffer <= {tx_buffer[REG_W-2:0], 1'b0};
-        end
-      end
-    end
-  end
-
   // MISO output
-  assign spi_miso = tx_buffer[REG_W-1];
+  assign spi_miso = state == STATE_TX_DATA ? rx_buffer[REG_W-1] : 1'b0;
 
 endmodule
