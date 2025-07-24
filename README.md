@@ -46,13 +46,11 @@ If you have any trouble following the steps below, ask in the Tiny Tapeout Disco
 
 * Copy the test in to a subdirectory of test/user_peripherals
 * Update your testbench.py to set the PERIPHERAL_NUM to match the value used in peripherals.v.
-* In test/test_basic.mk, include your sources in PROJECT_SOURCES 
-* In test/test_basic.mk, if you are using your own Python modules, extend PYTHONPATH to include them
-* In test/test_prog.mk, include your sources in PROJECT_SOURCES 
 * In test/Makefile, add the name of your test to the all recipe. If your test is called my_peripheral.py add this: `peri-my_peripheral.xml`
 
 To run your test, make sure you have installed the `requirements.txt`, then:
 
+    make clean
     make peri-my_peripheral.xml
 
 And the compressed waveform will be in `sim_build/rtl/tb.fst`
