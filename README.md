@@ -34,13 +34,31 @@ If you have any trouble following the steps below, ask in the Tiny Tapeout Disco
 
 ### Add your peripheral to the "Full interface peripherals" section in src/peripherals.v
 
-* Each peripheral needs its own index, and you'll have to update that in 6 different places (the example shows peripheral index of 4) :
-  * `.uo_out(uo_out_from_user_peri[4]),`
-  * `.data_write_n(data_write_n    | {2{~peri_user[4]}}),`
-  * `.data_read_n(data_read_n_peri | {2{~peri_user[4]}}),`
-  * `.data_out(data_from_user_peri[4]),`
-  * `.data_ready(data_ready_from_user_peri[4]),`
-  * `.user_interrupt(user_interrupts[4])`
+Each peripheral needs to go in its own slot in.  Find an existing slot that is set to use the `tqvp_full_example` peripheral, e.g:
+
+    tqvp_full_example i_user_peri04 (
+        .clk(clk),
+        .rst_n(rst_n),
+
+        .ui_in(ui_in),
+        .uo_out(uo_out_from_user_peri[4]),
+
+        .address(addr_in[5:0]),
+        .data_in(data_in),
+
+        .data_write_n(data_write_n    | {2{~peri_user[4]}}),
+        .data_read_n(data_read_n_peri | {2{~peri_user[4]}}),
+
+        .data_out(data_from_user_peri[4]),
+        .data_ready(data_ready_from_user_peri[4]),
+
+        .user_interrupt(user_interrupts[4])
+    );
+
+and change the first line to match your peripheral, for example:
+
+    tqvp_mike_cool_synth i_cool_synth04 (
+
 
 ### Add your test file to test/user_peripherals
 
