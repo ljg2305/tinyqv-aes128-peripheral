@@ -34,7 +34,7 @@ If you have any trouble following the steps below, ask in the Tiny Tapeout Disco
 
 ### Add your peripheral to the "Full interface peripherals" section in src/peripherals.v
 
-Each peripheral needs to go in its own slot in.  Find an existing slot that is set to use the `tqvp_full_example` peripheral, e.g:
+Each peripheral needs to go in its own slot in.  Find an existing slot that is still set to use the `tqvp_full_example` peripheral, this example shows slot 4:
 
     tqvp_full_example i_user_peri04 (
         .clk(clk),
@@ -63,7 +63,7 @@ and change the first line to match your peripheral, for example:
 ### Add your test file to test/user_peripherals
 
 * Copy the test in to a subdirectory of test/user_peripherals
-* Update your testbench.py to set the PERIPHERAL_NUM to match the value used in peripherals.v.
+* Update your testbench.py to set the PERIPHERAL_NUM to match the slot used in peripherals.v.
 * In test/Makefile, add the name of your test to the all recipe. If your test is called my_peripheral.py add this: `peri-my_peripheral.xml`
 
 To run your test, make sure you have installed the `requirements.txt`, then:
