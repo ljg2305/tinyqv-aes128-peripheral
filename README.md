@@ -8,11 +8,23 @@
 
 [TinyQV](https://github.com/TinyTapeout/ttsky25a-tinyQV) is a Risc-V CPU designed for Tiny Tapeout.
 
-This template helps you create peripherals that can be integrated with TinyQV.
+This template helps you create peripherals that can be integrated with TinyQV, and taped out for free as part of the [Risc-V peripheral challenge](https://tinytapeout.com/competitions/risc-v-peripheral/).
 
-Implement your peripheral by replacing the implementation in the [example](src/peripheral.v) with your own implementation.  You may create additional modules.
+## What can a peripheral do?
 
-Test your peripheral by replacing and extending the [example test](test/test.py).
+A peripheral allows the CPU to interact with the input and output pins, or provides some additional functionality to the CPU, or both!  All sorts of things are possible - from a UART or custom sensor driver to a graphics driver or division accelerator.
+
+Each peripheral is allocated a range in the system's memory map, so that the CPU can read data from and write data to the peripheral.  This allows the TinyQV CPU to communicate with the peripheral.
+
+The peripheral also has access to the 8 input and 8 output pins available to Tiny Tapeout designs.  The peripheral infrastructure can select which peripheral is in control of each output pin individually, so multiple peripherals can be used together.  The bidirectional pins are not available to the peripherals as they are used by TinyQV to access the flash and RAM.
+
+The interface to the peripheral is [here](src/peripheral.v#L12-L31).
+
+## How do I get started?
+
+Implement your peripheral by replacing the implementation in the [example](src/peripheral.v#L34-L84) with your own implementation.  You may create additional modules.
+
+Test your peripheral by replacing and extending the [example test](test/test.py#L35-L77).
 
 ## Submission checklist
 
