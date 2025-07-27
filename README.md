@@ -87,7 +87,7 @@ And the compressed waveform will be in `sim_build/rtl/tb.fst`
 
 ### Add your docs to docs/user_peripherals
 
-* Copy your docs/info.md into this folder and rename it appropriately (e.g. my_peripheral.md)
+* Copy your docs/info.md into this folder and rename it with the peripheral index at the start (e.g. 04_my_peripheral.md)
 
 ## The peripheral test harness
 
