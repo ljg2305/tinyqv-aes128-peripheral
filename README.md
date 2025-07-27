@@ -76,12 +76,11 @@ and change the first line to match your peripheral, for example:
 
 * Copy the test in to a subdirectory of test/user_peripherals
 * Update your testbench.py to set the PERIPHERAL_NUM to match the slot used in peripherals.v.
-* In test/Makefile, add the name of your test to the all recipe. If your test is called my_peripheral.py add this: `peri-my_peripheral.xml`
+* In test/Makefile, add the name of your test to the list of user peripherals. If your test is test.py in the my_peripheral directory add this: `my_peripheral.test`
 
 To run your test, make sure you have installed the `requirements.txt`, then:
 
-    make clean
-    make peri-my_peripheral.xml
+    make -B my_peripheral.test
 
 And the compressed waveform will be in `sim_build/rtl/tb.fst`
 
