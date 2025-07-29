@@ -35,13 +35,15 @@ Before submitting your design, please check:
 
 ## Submission process
 
-Please raise a pull request against https://github.com/TinyTapeout/ttsky25a-tinyQV adding your peripheral.  Link to your peripheral repo in the PR.
+Please raise a pull request against https://github.com/TinyTapeout/ttsky25a-tinyQV adding your peripheral.
 
-If you have any trouble following the steps below, ask in the Tiny Tapeout Discord or in the PR.
+To get started, fork that repo and clone it, then follow the steps below to add your peripheral into the project.
+
+If you have any trouble following these steps, ask in the Tiny Tapeout Discord or in the PR.
 
 ### Add your verilog source to src/user_peripherals
 
-* If you have multiple modules create a subdirectory.
+* Copy the verilog files in to a subdirectory of src/user_peripherals
 * Add each source file to the info.yaml source_files section
 
 ### Add your peripheral to the "Full interface peripherals" section in src/peripherals.v
@@ -87,6 +89,13 @@ And the compressed waveform will be in `sim_build/rtl/tb.fst`
 ### Add your docs to docs/user_peripherals
 
 * Copy your docs/info.md into this folder and rename it with the peripheral index at the start (e.g. 04_my_peripheral.md)
+* Fill in the Peripheral Index in the document.
+
+### Raise the Pull Request through GitHub
+
+* Push your changes to your fork of ttsky25a-tinyQV.
+* Raise a pull request by going to https://github.com/TinyTapeout/ttsky25a-tinyQV/pulls
+* Link to your peripheral repo in the PR.
 
 ## The peripheral test harness
 
