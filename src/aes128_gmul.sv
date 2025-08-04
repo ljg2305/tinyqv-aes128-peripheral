@@ -1,3 +1,5 @@
+import aes128_type_pkg::*;
+
 module aes128_gmul (
     input logic         clk_i, 
     input logic         rst_n_i,

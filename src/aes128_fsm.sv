@@ -39,19 +39,13 @@ module aes128_fsm (
 
     // ENCRYPT DECRYPT MODE SIG
     mode_t mode;
+    //TODO remove hard coding capture mode on start_i
     assign mode = ENCRYPT;
    
-    //TODO TEMP DELETE/MOVE AS STAGES ARE ADDED:
-    // ROUND KEYS CAN BE GENERATED AFTER SUB_BYTES (I WANT THEM TO SHARE THE
-    // LUT) 
-    // IT CAN HAVE AN INTERFACE WHICH ACCEPTS THE ROUND NUMBER AND WAITS FOR
-    // a start signal before generating the next 16 bytes. This requires
-    // 16byte register for the storage and an extra 4 byte for the
-    // cacluclation
-    // a new_round signal and done signal. Start will reset the done signal 
-    
+    // KEY_EXPANSION
     logic [127:0] add_round_key_data; 
-    assign add_round_key_data = key_i;
+    logic         add_round_key_valid; 
+    logic         add_round_Ket_request;
 
     // MAIN STATE MACHINE
     always_ff @(posedge clk_i) begin
@@ -81,11 +75,13 @@ module aes128_fsm (
                 if (mix_column_done) next_state = ADD_ROUND_KEY; 
             end 
             ADD_ROUND_KEY: begin 
-                if (round_counter == 10) begin 
-                    next_state = STORE_RESULT;
-                end else begin 
-                    next_state = SUB_BYTES; 
-                end 
+                if (add_round_key_valid) begin 
+                    if (round_counter == 10) begin 
+                        next_state = STORE_RESULT;
+                    end else begin 
+                        next_state = SUB_BYTES; 
+                    end 
+                end
             end 
             STORE_RESULT: next_state = WAIT; 
         endcase
@@ -117,7 +113,9 @@ module aes128_fsm (
                     end 
                 end 
                 ADD_ROUND_KEY: begin 
-                    working_data <=  working_data ^ add_round_key_data; 
+                    if (add_round_key_valid) begin  
+                        working_data <=  working_data ^ add_round_key_data; 
+                    end
                 end 
             endcase
         end
@@ -130,13 +128,13 @@ module aes128_fsm (
         end else begin
             case (current_state)  
                 WAIT:          round_counter <= '0;
-                ADD_ROUND_KEY: round_counter <= round_counter+1;
+                ADD_ROUND_KEY: if (add_round_key_valid) round_counter <= round_counter+1;
             endcase
         end
     end
 
     // SUB_BYTES MODULE INST 
-    assign sub_byte_start = (next_state==SUB_BYTES && current_state != SUB_BYTES) ? 1'b1 : 1'b0;
+    assign sub_byte_start = (next_state==SUB_BYTES && current_state != SUB_BYTES);
 
     aes128_sub_bytes aes128_sub_bytes_inst (
         .clk_i(clk_i), 
@@ -146,7 +144,9 @@ module aes128_fsm (
         .data_o(sub_byte_data), 
         .addr_o(sub_byte_addr), 
         .valid_o(sub_byte_valid),
-        .done_o(sub_byte_done)
+        .done_o(sub_byte_done),
+        .sbox_sub_o(), 
+        .sbox_sub_i('0)
     );
 
     // MIX ROWS MODULE INST 
@@ -156,7 +156,7 @@ module aes128_fsm (
     );
 
     // MIX COLUMN MODULE INST 
-    assign mix_column_start = (next_state==MIX_COLUMNS && current_state != MIX_COLUMNS) ? 1'b1 : 1'b0;
+    assign mix_column_start = (next_state==MIX_COLUMNS && current_state != MIX_COLUMNS);
     aes128_mix_column aes128_mix_column_inst (
         .clk_i(clk_i), 
         .rst_n_i(rst_n_i),
@@ -168,6 +168,30 @@ module aes128_fsm (
         .valid_o(mix_column_valid),
         .done_o(mix_column_done)
     );
+
+    // KEY EXPANSION 
+    
+    // ROUND KEYS CAN BE GENERATED AFTER SUB_BYTES ( TODO I WANT THEM TO SHARE THE
+    // LUT for space saving) 
+    
+    // single cycle request pulse when main FSM transtions away from
+    // sub_bytes. 
+    
+    assign add_round_key_request = (current_state == SUB_BYTES && next_state != SUB_BYTES); 
+    aes128_key_expansion aes128_key_expansion_inst (
+        .clk_i(clk_i), 
+        .rst_n_i(rst_n_i),
+        .key_i(key_i), 
+        .start_i(start_i), 
+        .key_req_i(add_round_key_request), 
+        .key_o(add_round_key_data), 
+        .valid_o(add_round_key_valid), 
+        .sbox_sub_o(), 
+        .sbox_sub_i('0)
+        );
+
+    // SHARED SBOX LUT
+    // TODO 
 
 
     // STORE RESULT + SET RESET VALID

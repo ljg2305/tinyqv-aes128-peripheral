@@ -1,3 +1,5 @@
+import aes128_type_pkg::*;
+
 module aes128_sub_bytes #(
     int N_BYTES = 16,
     logic EXTERNAL_SBOX = 0
