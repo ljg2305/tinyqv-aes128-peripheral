@@ -58,31 +58,18 @@ def key_expansion(key: bytes, nb: int = 4) -> [[[int]]]:
     for i in range(nk, nb * (nr + 1)):
         temp = w[i-1]
         if i % nk == 0:
-            #print(temp.hex())
-            #print(rot_word(temp).hex())
-            #print(sub_word(rot_word(temp)).hex())
-            #print(rcon(i//nk).hex())
             temp = xor_bytes(sub_word(rot_word(temp)), rcon(i // nk))
-            #print(temp.hex())
         elif nk > 6 and i % nk == 4:
             temp = sub_word(temp)
-        #print(xor_bytes(w[i - nk], temp).hex())
-        #print()
         w.append(xor_bytes(w[i - nk], temp))
 
     return [w[i*4:(i+1)*4] for i in range(len(w) // 4)]
 
 
 def add_round_key(state: [[int]], key_schedule: [[[int]]], round: int):
-    print(len(state[0]))
-    print(len(state))
     round_key = key_schedule[round]
     for r in range(len(state)):
-        for c in range(len(state[0])):
-             print(hex(round_key[r][c]))
-             print(state[r])
         state[r] = [state[r][c] ^ round_key[r][c] for c in range(len(state[0]))]
-
 
 
 def sub_bytes(state: [[int]]):
@@ -117,6 +104,7 @@ def mix_column(col: [int]):
 
 def mix_columns(state: [[int]]):
     for r in state:
+        print("r:  %s"%"".join(['{:02X}'.format(b) for b in r][::-1]))
         mix_column(r)
 
 
@@ -145,12 +133,18 @@ def aes_encryption(data: bytes, key: bytes) -> bytes:
     key_schedule = key_expansion(key)
 
     add_round_key(state, key_schedule, round=0)
+    print(state)
+    print("".join(['{:02X}'.format(b) for r in state for b in r][::-1]))
 
     for round in range(1, nr):
         sub_bytes(state)
+        print("SUB_BYTES:  %s"%"".join(['{:02X}'.format(b) for r in state for b in r][::-1]))
         shift_rows(state)
+        print("SHIFT_ROWS: %s"%"".join(['{:02X}'.format(b) for r in state for b in r][::-1]))
         mix_columns(state)
+        print("MIX_COLS: %s"%"".join(['{:02X}'.format(b) for r in state for b in r][::-1]))
         add_round_key(state, key_schedule, round)
+        print("ADD_KEY: %s"%"".join(['{:02X}'.format(b) for r in state for b in r][::-1]))
 
     sub_bytes(state)
     shift_rows(state)

@@ -11,6 +11,7 @@ module aes128_fsm (
     output logic         valid_o, 
     output logic         ready_o 
     );
+    import aes128_utils_pkg::*;
 
     // WORKING DATA REGISTER
     logic [127:0] working_data;
@@ -95,7 +96,7 @@ module aes128_fsm (
             case (current_state)  
                 WAIT: begin  
                     working_data <= 128'b0;
-                    if (start_i) working_data <= data_i;
+                    if (start_i) working_data <= aes_reverse_bytes(data_i);
                 end 
                 SUB_BYTES: begin
                     // write byte by byte 
@@ -201,7 +202,7 @@ module aes128_fsm (
             valid_o  <= 1'b0; 
         end else begin
             if (current_state==STORE_RESULT) begin
-                result_o <= working_data;
+                result_o <= aes_reverse_bytes(working_data);
                 valid_o  <= 1'b1;
             end 
             if (start_i) valid_o <= 1'b0;

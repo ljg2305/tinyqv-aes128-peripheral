@@ -7,10 +7,7 @@ from cocotb.triggers import ClockCycles
 
 from tqv import TinyQV
 
-# When submitting your design, change this to the peripheral number
-# in peripherals.v.  e.g. if your design is i_user_peri05, set this to 5.
-# The peripheral number is not used by the test harness.
-PERIPHERAL_NUM = 0
+from aes_support_funcs import *
 
 @cocotb.test()
 async def test_aes128_sub_bytes(dut):
@@ -22,6 +19,7 @@ async def test_aes128_sub_bytes(dut):
 
     dut.start_i.value = 0
     dut.data_i.value = 0
+    dut.key_i.value = 0
 
     # reset 
     dut.rst_n_i.value = 0
@@ -31,7 +29,10 @@ async def test_aes128_sub_bytes(dut):
 
     #dut.data_i.value = 0x0F0E0D0C0B0A09080706050403020100
     dut.data_i.value = 0x03020100030201000302010003020100
-    dut.key_i.value = 0
+    dut.key_i.value = 0x2b7e151628aed2a6abf7976676151301
+    plaintext = bytearray.fromhex('03020100030201000302010003020100')
+    key = bytearray.fromhex('2b7e151628aed2a6abf7976676151301')
+    ciphertext = aes_encryption(plaintext, key)
     dut.op_i.value = 0
 
     dut.start_i.value = 1
@@ -40,6 +41,7 @@ async def test_aes128_sub_bytes(dut):
 
     await ClockCycles(dut.clk_i, 8000)
 
+    print(ciphertext.hex())
     
     with open('temp_case.sv','w') as f:
         for i in range(0,256):

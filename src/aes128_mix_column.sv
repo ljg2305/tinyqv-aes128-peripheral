@@ -41,6 +41,7 @@ module aes128_mix_column (
     
     // COUNTER SIGNALS
     logic [1:0] col_counter; 
+    logic [1:0] next_col_counter; 
     logic [1:0] row_counter; 
     logic [1:0] multiplication_idx; 
     logic [5:0] counter;
@@ -94,25 +95,25 @@ module aes128_mix_column (
     end 
 
     //MULTIPLIER 
-    assign mul_in_a = col_reg[(multiplication_idx)*8+:8];
+    assign mul_in_b = col_reg[(multiplication_idx)*8+:8];
     assign matrix_idx = multiplication_idx - row_counter;
 
     always_comb begin
         case (mode_i)
             ENCRYPT: begin  
                 case (matrix_idx)
-                    4'h0 : mul_in_b = 2;  
-                    4'h1 : mul_in_b = 3;
-                    4'h2 : mul_in_b = 1;  
-                    4'h3 : mul_in_b = 1;
+                    4'h0 : mul_in_a = 2;  
+                    4'h1 : mul_in_a = 3;
+                    4'h2 : mul_in_a = 1;  
+                    4'h3 : mul_in_a = 1;
                 endcase
             end
             DECRYPT: begin  
                 case (matrix_idx)
-                    4'h0 : mul_in_b = 14;  
-                    4'h1 : mul_in_b = 11;
-                    4'h2 : mul_in_b = 13;  
-                    4'h3 : mul_in_b = 9;
+                    4'h0 : mul_in_a = 14;  
+                    4'h1 : mul_in_a = 11;
+                    4'h2 : mul_in_a = 13;  
+                    4'h3 : mul_in_a = 9;
                 endcase
             end
         endcase
@@ -131,6 +132,7 @@ module aes128_mix_column (
     );
 
     // RESULT CALC 
+    assign next_col_counter = col_counter+1; 
     always_ff @(posedge clk_i) begin
         if (!rst_n_i) begin
             working_reg <= '0;
@@ -150,7 +152,10 @@ module aes128_mix_column (
                         if (multiplication_idx == 0) begin 
                             working_reg <= mul_out; 
                         end else begin 
-                            working_reg <= working_reg + mul_out; 
+                            working_reg <= working_reg ^ mul_out; 
+                        end 
+                        if ( multiplication_idx == 3 && row_counter == 3 ) begin 
+                            col_reg <= data_i[next_col_counter*32 +: 32];
                         end 
                     end 
                 end
