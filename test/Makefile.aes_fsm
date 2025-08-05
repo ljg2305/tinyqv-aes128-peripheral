@@ -3,7 +3,7 @@
 
 # defaults SIM ?= icarus TOPLEVEL_LANG ?= verilog
 SRC_DIR = $(PWD)/../src
-PROJECT_SOURCES = aes128_type_pkg.sv aes128_fsm.sv aes128_gmul.sv aes128_sub_bytes.sv aes128_mix_rows.sv aes128_mix_column.sv aes128_rijndael_sbox.sv
+PROJECT_SOURCES = aes128_type_pkg.sv aes128_utils_pkg.sv aes128_fsm.sv aes128_key_expansion.sv aes128_gmul.sv aes128_sub_bytes.sv aes128_mix_rows.sv aes128_mix_column.sv aes128_rijndael_sbox.sv
 ADDITIONAL_SOURCES = tt_wrapper.v test_harness/*.sv
 
 ifneq ($(GATES),yes)

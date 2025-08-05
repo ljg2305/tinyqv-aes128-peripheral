@@ -9,11 +9,14 @@ module aes128_key_expansion #(
     input logic          start_i, 
     input logic          key_req_i, 
     output logic [127:0] key_o, 
+    output logic [127:0] key_big_end_o, 
     output logic         valid_o, 
     // external S-BOX signals 
     output logic   [7:0] sbox_sub_o, 
     input logic    [7:0] sbox_sub_i
     );
+
+    import aes128_utils_pkg::*;
 
     localparam int WORD_LENGTH = 4;
     
@@ -50,6 +53,10 @@ module aes128_key_expansion #(
     //XOR SIGNALS
     logic [1:0] xor_count; 
 
+    // KEY FLIP
+    logic [128:0] input_key; 
+    assign input_key = aes_reverse_bytes(key_i);
+
     // MAIN STATE MACHINE
     always_ff @(posedge clk_i) begin
         if (!rst_n_i) begin
@@ -84,9 +91,9 @@ module aes128_key_expansion #(
             case (current_state) 
                 WAIT: begin 
                     if (start_i) begin 
-                        working_key <= key_i;
+                        working_key <= input_key;
                         key_valid   <= 1'b1;
-                        working_manip <= key_i[127:96];
+                        working_manip <= input_key[12*8+:32];
                     end 
                     if (key_req_i) begin 
                         key_valid   <= 1'b0;
@@ -183,7 +190,8 @@ module aes128_key_expansion #(
     end
 
     // KEY OUTPUT 
-    assign key_o = working_key; 
+    assign key_o = working_key;
+    assign key_big_end_o = aes_reverse_bytes(working_key); 
     assign valid_o = key_valid; 
 
    initial begin

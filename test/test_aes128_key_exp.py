@@ -9,13 +9,7 @@ from cocotb.triggers import RisingEdge
 
 from Crypto.Cipher import AES
 
-from tqv import TinyQV
 from aes_support_funcs import *
-
-# When submitting your design, change this to the peripheral number
-# in peripherals.v.  e.g. if your design is i_user_peri05, set this to 5.
-# The peripheral number is not used by the test harness.
-PERIPHERAL_NUM = 0
 
 @cocotb.test()
 async def test_aes128_sub_bytes(dut):
@@ -35,21 +29,9 @@ async def test_aes128_sub_bytes(dut):
     dut.rst_n_i.value = 1
     await ClockCycles(dut.clk_i, 1)
 
-
-    #data = bytearray.fromhex('03020100030201000302010003020100')
-    #key = bytearray.fromhex('2b7e151628aed2a6abf7976676151301')
-    #cipher = AES.new(key, AES.MODE_ECB)
-    #ciphertext = cipher.encrypt(data)
-    #print(ciphertext.hex())
-
-
-    #dut.key_i.value = 0x2b7e151628aed2a6abf7976676151301
-    # TODO resolve endianness issues
-    dut.key_i.value = 0x011315766697f7aba6d2ae2816157e2b
+    dut.key_i.value = 0x2b7e151628aed2a6abf7976676151301
     key = bytearray.fromhex('2b7e151628aed2a6abf7976676151301')
 
-    print(key.hex())
-    print()
     key_schedule = key_expansion(key)
 
     dut.start_i.value = 1
@@ -60,9 +42,10 @@ async def test_aes128_sub_bytes(dut):
 
         #Wait for valid signal 
         await RisingEdge(dut.valid_o) 
-        key_int = dut.key_o.value.integer  # Get the integer value
+        await ClockCycles(dut.clk_i, 1)
+        key_int = dut.key_big_end_o.value.integer  # Get the integer value
         key_bytes = key_int.to_bytes(16, byteorder='big')  # 16 bytes for 128-bit key
-        round_key_out = bytearray(key_bytes)[::-1]
+        round_key_out = bytearray(key_bytes)
 
         round_key = key_schedule[round]
         rk = bytearray()
