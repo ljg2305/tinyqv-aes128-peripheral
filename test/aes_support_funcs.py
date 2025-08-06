@@ -104,7 +104,6 @@ def mix_column(col: [int]):
 
 def mix_columns(state: [[int]]):
     for r in state:
-        print("r:  %s"%"".join(['{:02X}'.format(b) for b in r][::-1]))
         mix_column(r)
 
 
@@ -133,18 +132,13 @@ def aes_encryption(data: bytes, key: bytes) -> bytes:
     key_schedule = key_expansion(key)
 
     add_round_key(state, key_schedule, round=0)
-    print(state)
-    print("".join(['{:02X}'.format(b) for r in state for b in r][::-1]))
+    #print("".join(['{:02X}'.format(b) for r in state for b in r][::-1]))
 
     for round in range(1, nr):
         sub_bytes(state)
-        print("SUB_BYTES:  %s"%"".join(['{:02X}'.format(b) for r in state for b in r][::-1]))
         shift_rows(state)
-        print("SHIFT_ROWS: %s"%"".join(['{:02X}'.format(b) for r in state for b in r][::-1]))
         mix_columns(state)
-        print("MIX_COLS: %s"%"".join(['{:02X}'.format(b) for r in state for b in r][::-1]))
         add_round_key(state, key_schedule, round)
-        print("ADD_KEY: %s"%"".join(['{:02X}'.format(b) for r in state for b in r][::-1]))
 
     sub_bytes(state)
     shift_rows(state)

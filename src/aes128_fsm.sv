@@ -1,6 +1,8 @@
 import aes128_type_pkg::*;
 
-module aes128_fsm (
+module aes128_fsm #(
+    logic EXTERNAL_SBOX = 1
+    )(
     input logic         clk_i, 
     input logic         rst_n_i,
     input logic          start_i, 
@@ -37,6 +39,12 @@ module aes128_fsm (
     logic         mix_column_valid;
     logic         mix_column_start;
     logic         mix_column_done;
+
+    //EXTERNAL SBOX
+    logic [7:0] sub_byte_sbox_data_out;
+    logic [7:0] sbox_data_out;
+    logic [7:0] add_round_sbox_data_in;
+    logic [7:0] sbox_data_in;
 
     // ENCRYPT DECRYPT MODE SIG
     mode_t mode;
@@ -137,7 +145,7 @@ module aes128_fsm (
     // SUB_BYTES MODULE INST 
     assign sub_byte_start = (next_state==SUB_BYTES && current_state != SUB_BYTES);
 
-    aes128_sub_bytes aes128_sub_bytes_inst (
+    aes128_sub_bytes #(.EXTERNAL_SBOX(EXTERNAL_SBOX)) aes128_sub_bytes_inst   (
         .clk_i(clk_i), 
         .rst_n_i(rst_n_i),
         .data_i(working_data), 
@@ -146,8 +154,8 @@ module aes128_fsm (
         .addr_o(sub_byte_addr), 
         .valid_o(sub_byte_valid),
         .done_o(sub_byte_done),
-        .sbox_sub_o(), 
-        .sbox_sub_i('0)
+        .sbox_sub_o(sub_byte_sbox_data_out), 
+        .sbox_sub_i(sbox_data_out)
     );
 
     // MIX ROWS MODULE INST 
@@ -172,14 +180,11 @@ module aes128_fsm (
 
     // KEY EXPANSION 
     
-    // ROUND KEYS CAN BE GENERATED AFTER SUB_BYTES ( TODO I WANT THEM TO SHARE THE
-    // LUT for space saving) 
-    
     // single cycle request pulse when main FSM transtions away from
     // sub_bytes. 
     
     assign add_round_key_request = (current_state == SUB_BYTES && next_state != SUB_BYTES); 
-    aes128_key_expansion aes128_key_expansion_inst (
+    aes128_key_expansion #(.EXTERNAL_SBOX(EXTERNAL_SBOX)) aes128_key_expansion_inst (
         .clk_i(clk_i), 
         .rst_n_i(rst_n_i),
         .key_i(key_i), 
@@ -187,12 +192,22 @@ module aes128_fsm (
         .key_req_i(add_round_key_request), 
         .key_o(add_round_key_data), 
         .valid_o(add_round_key_valid), 
-        .sbox_sub_o(), 
-        .sbox_sub_i('0)
+        .sbox_sub_o(add_round_sbox_data_in), 
+        .sbox_sub_i(sbox_data_out)
         );
 
     // SHARED SBOX LUT
-    // TODO 
+     generate
+        if (EXTERNAL_SBOX) begin 
+            assign sbox_data_in = (current_state == SUB_BYTES) ? sub_byte_sbox_data_out : add_round_sbox_data_in;
+            aes128_rijndael_sbox aes128_rijndael_sbox_inst (
+                .data_i(sbox_data_in),
+                .data_o(sbox_data_out)
+            );
+        end else begin 
+            assign sbox_data_out = '0; 
+        end 
+    endgenerate
 
 
     // STORE RESULT + SET RESET VALID

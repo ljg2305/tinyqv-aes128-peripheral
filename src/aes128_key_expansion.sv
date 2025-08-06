@@ -139,7 +139,7 @@ module aes128_key_expansion #(
     // SUB_BYTES MODULE INST 
     assign sub_byte_start = (next_state==SUB && current_state != SUB);
 
-    aes128_sub_bytes  #( .N_BYTES(WORD_LENGTH)) aes128_sub_bytes_inst (
+    aes128_sub_bytes  #(.EXTERNAL_SBOX(EXTERNAL_SBOX), .N_BYTES(WORD_LENGTH)) aes128_sub_bytes_inst (
         .clk_i(clk_i), 
         .rst_n_i(rst_n_i),
         .data_i(working_manip), 
@@ -148,8 +148,8 @@ module aes128_key_expansion #(
         .addr_o(sub_byte_addr), 
         .valid_o(sub_byte_valid),
         .done_o(sub_byte_done),
-        .sbox_sub_o(), 
-        .sbox_sub_i('0)
+        .sbox_sub_o(sbox_sub_o), 
+        .sbox_sub_i(sbox_sub_i)
     );
 
     // ROUND CONST LOGIC

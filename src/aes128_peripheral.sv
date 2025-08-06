@@ -62,6 +62,16 @@ module aes128_peripheral (
     logic [3:0] word_address;
     logic [31:0] registers    [NUM_RW_REGS-1:0];
     logic [31:0] register_out [NUM_REGS-1:0];
+
+    logic start; 
+    logic [1:0] op; 
+    logic interrupt_en; 
+    logic [127:0] key; 
+    logic [127:0] data;
+    logic valid; 
+    logic ready; 
+    logic [127:0] result; 
+
     
     assign word_address = address[3:0];
 
@@ -88,15 +98,6 @@ module aes128_peripheral (
         end
     end 
 
-    logic start; 
-    logic [1:0] op; 
-    logic interrupt_en; 
-    logic [127:0] key; 
-    logic [127:0] data;
-    logic done; 
-    logic ready; 
-    logic [127:0] result; 
-
     assign start        = registers[0][0];
     assign op           = registers[0][2:1];
     assign interrupt_en = registers[0][3];
@@ -110,16 +111,24 @@ module aes128_peripheral (
         assign register_out[i] = registers[i];
       end
     endgenerate
-    assign register_out[9]    = {30'b0,done,ready};
+    assign register_out[9]    = {30'b0,valid,ready};
     assign register_out[10]   = result[31:0];
     assign register_out[11]   = result[62:31];
     assign register_out[12]   = result[95:63];
     assign register_out[13]   = result[127:96];
 
     // LOGIC 
-    
-    assign done = 1'b0;
-    assign ready = 1'b1;
+    aes128_fsm aes128_fsm_inst (
+        .clk_i(clk), 
+        .rst_n_i(rst_n),
+        .start_i(start), 
+        .op_i(op), 
+        .key_i(key), 
+        .data_i(data), 
+        .result_o(result),
+        .valid_o(valid), 
+        .ready_o(ready) 
+        );
 
     // IO 
     //
