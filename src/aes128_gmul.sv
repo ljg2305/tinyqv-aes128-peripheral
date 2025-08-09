@@ -81,8 +81,11 @@ module aes128_gmul (
     assign valid_o = (next_state == WAIT && current_state != WAIT) ? 1'b1 : 1'b0; 
     assign result_o = result_reg; 
 
-    initial begin $dumpfile("aes128_gmul.vcd"); $dumpvars(0, aes128_gmul);
-        #1;
+`ifndef synthesis
+    initial begin 
+        $dumpfile("aes128_gmul.vcd"); 
+        $dumpvars(1, aes128_gmul);
     end
+`endif //synthesis
 
 endmodule 

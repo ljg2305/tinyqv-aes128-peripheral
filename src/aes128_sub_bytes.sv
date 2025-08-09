@@ -23,6 +23,7 @@ module aes128_sub_bytes #(
     // State signals
     enum int unsigned { WAIT, OUTPUT } state, next_state;
     logic [3:0] byte_count;
+    logic done;
 
     // Main State Machine
     always_ff @(posedge clk_i) begin
@@ -55,9 +56,15 @@ module aes128_sub_bytes #(
     always_ff @(posedge clk_i) begin
         if (!rst_n_i) begin
             byte_count <= 4'b0;
+            done       <= 1'b0;
         end else begin
+            done <= 1'b0;
             if (state == OUTPUT) byte_count <= byte_count+1;
             else byte_count <= 4'b0; 
+
+            if (state == OUTPUT) begin 
+                if (byte_count >= N_BYTES-1) done <= 1'b1; 
+            end
         end
     end
 
@@ -76,12 +83,14 @@ module aes128_sub_bytes #(
     endgenerate
     
     // DONE SIGNAL 
-    assign done_o = (next_state==WAIT && state != WAIT) ? 1'b1 : 1'b0;
+    //assign done_o = (next_state==WAIT && state != WAIT) ? 1'b1 : 1'b0;
+    assign done_o = done;
 
-  initial begin
-    $dumpfile("aes128_sub_bytes.vcd");
-    $dumpvars(0, aes128_sub_bytes);
-    #1;
-  end
+`ifndef synthesis
+    initial begin
+        $dumpfile("aes128_sub_bytes.vcd");
+        $dumpvars(1, aes128_sub_bytes);
+    end
+`endif //synthesis
 
 endmodule 

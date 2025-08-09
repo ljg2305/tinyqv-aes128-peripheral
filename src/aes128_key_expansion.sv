@@ -131,7 +131,8 @@ module aes128_key_expansion #(
     generate 
         for (i = 0; i < WORD_LENGTH; i++) begin 
             localparam logic [1:0] SourceAddr = i;
-            localparam logic [1:0] DestAddr = i-1;
+            //synthesis needs explicit overflow for localparam it seems
+            localparam logic [1:0] DestAddr = (i == 0) ? 3: i-1;
             assign rot_word_data[DestAddr*8+:8] = working_manip[SourceAddr*8+:8];
         end 
     endgenerate
@@ -194,10 +195,11 @@ module aes128_key_expansion #(
     assign key_big_end_o = aes_reverse_bytes(working_key); 
     assign valid_o = key_valid; 
 
+`ifndef synthesis
    initial begin
      $dumpfile("aes128_key_expansion.vcd");
-     $dumpvars(0, aes128_key_expansion);
-     #1;
+     $dumpvars(1, aes128_key_expansion);
    end 
+`endif //synthesis
 
 endmodule 

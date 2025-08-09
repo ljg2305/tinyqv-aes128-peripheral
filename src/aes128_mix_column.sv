@@ -5,7 +5,7 @@ module aes128_mix_column (
     input logic         rst_n_i,
     input logic [127:0] data_i, 
     input logic         start_i, 
-    input mode_t         mode_i,
+    input mode_t        mode_i,
     output logic [7:0]  data_o, 
     output logic [3:0]  addr_o, 
     output logic        valid_o,
@@ -53,7 +53,8 @@ module aes128_mix_column (
 
     // RESULT SIGNALS
     logic [31:0] col_reg; 
-    logic [7:0] working_reg; 
+    logic [7:0]  working_reg; 
+    logic        valid, done;
 
 
     // MAIN STATE MACHINE
@@ -136,10 +137,10 @@ module aes128_mix_column (
     always_ff @(posedge clk_i) begin
         if (!rst_n_i) begin
             working_reg <= '0;
-            valid_o <= 1'b0;
+            valid <= 1'b0;
             col_reg <= 1'b0;
         end else begin
-            valid_o <= 1'b0;
+            valid <= 1'b0;
             case (current_state)
                 LOAD: begin 
                    col_reg <= data_i[col_counter*32 +: 32];
@@ -147,7 +148,7 @@ module aes128_mix_column (
                 MULTIPLY: begin 
                     if (mul_valid) begin 
                         if (multiplication_idx == 3) begin 
-                            valid_o <= 1'b1;
+                            valid <= 1'b1;
                         end 
                         if (multiplication_idx == 0) begin 
                             working_reg <= mul_out; 
@@ -169,13 +170,16 @@ module aes128_mix_column (
     assign data_o = working_reg; 
 
     // DONE SIGNAL 
-    assign done_o = (next_state==WAIT && current_state != WAIT) ? 1'b1 : 1'b0;
+    assign done_o = (current_state == DONE); 
+    assign valid_o = valid; 
 
+`ifndef synthesis
     initial begin
         $dumpfile("aes128_mix_column.vcd");
-        $dumpvars(0, aes128_mix_column);
-        #1;
+        $dumpvars(1, aes128_mix_column);
     end
+`endif //synthesis
+
 endmodule 
 
 

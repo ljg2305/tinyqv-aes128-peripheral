@@ -227,10 +227,14 @@ module aes128_fsm #(
     // READY
     assign ready_o = (current_state==WAIT) ? 1'b1 : 1'b0;  
 
+
+`ifndef synthesis
+
    initial begin
      $dumpfile("aes128_fsm.vcd");
-     $dumpvars(0, aes128_fsm);
-     #1;
+     $dumpvars(1, aes128_fsm);
    end 
+
+`endif //synthesis
 
 endmodule 
