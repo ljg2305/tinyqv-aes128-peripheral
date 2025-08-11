@@ -6,6 +6,7 @@ module aes128_sub_bytes #(
     ) (
     input logic                     clk_i, 
     input logic                     rst_n_i,
+    input  mode_t                   mode_i,
     input [N_BYTES-1:0][7:0]        data_i, 
     input logic                     start_i, 
     output logic [7:0]              data_o, 
@@ -76,6 +77,7 @@ module aes128_sub_bytes #(
             assign sbox_sub_o = '0; 
             // Rijndael S-Box LUT signals
             aes128_rijndael_sbox aes128_rijndael_sbox_inst (
+                .mode_i(mode_i),
                 .data_i(sbox_data_in),
                 .data_o(sbox_data_out)
             );
@@ -83,7 +85,6 @@ module aes128_sub_bytes #(
     endgenerate
     
     // DONE SIGNAL 
-    //assign done_o = (next_state==WAIT && state != WAIT) ? 1'b1 : 1'b0;
     assign done_o = done;
 
 `ifndef synthesis

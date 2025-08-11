@@ -1,9 +1,13 @@
 # SPDX-FileCopyrightText: © 2025 Tiny Tapeout
 # SPDX-License-Identifier: Apache-2.0
 
+import os
 import cocotb
 from cocotb.clock import Clock
 from cocotb.triggers import ClockCycles
+
+from aes_support_funcs import *
+from Crypto.Cipher import AES
 
 from tqv import TinyQV
 
@@ -30,19 +34,57 @@ async def test_project(dut):
     # Reset
     await tqv.reset()
 
-    dut._log.info("Test project behavior")
+    for i in range(3):
 
-    # Test register write and read back
-    await tqv.write_word_reg(4,  0x82345678)
-    await tqv.write_word_reg(8,  0x82345678)
-    await tqv.write_word_reg(12, 0x82345678)
-    await tqv.write_word_reg(16, 0x82345678)
+        ## ENCRYPT 
+        key  = os.urandom(16).hex()
+        key_ba = bytearray.fromhex(key)
+        reg_offset = 0x04
+        for word in range(4):
+            key_slice = word*8
+            reg_data = int(key[key_slice:key_slice+8],16)
+            reg_addr = (3-word)*4 + reg_offset
+            await tqv.write_word_reg(reg_addr, reg_data)
 
-    await tqv.write_word_reg(20, 0x82345678)
-    await tqv.write_word_reg(24, 0x82345678)
-    await tqv.write_word_reg(28, 0x82345678)
-    await tqv.write_word_reg(32, 0x82345678)
-    # Wait for two clock cycles to see the output values, because ui_in is synchronized over two clocks,
-    # and a further clock is required for the output to propagate.
-    await ClockCycles(dut.clk, 3)
+        data  = os.urandom(16).hex()
+        data_ba = bytearray.fromhex(data)
+        reg_offset = 0x14
+        for word in range(4):
+            data_slice = word*8
+            reg_data = int(data[data_slice:data_slice+8],16)
+            reg_addr = (3-word)*4 + reg_offset
+            await tqv.write_word_reg(reg_addr, reg_data)
+
+        cipher = AES.new(key_ba, AES.MODE_ECB)
+        expected_result = cipher.encrypt(data_ba)
+        expected_out = aes_encryption(data_ba, key_ba)
+
+        await tqv.write_word_reg(0, 0x000000001)
+        # Wait for two clock cycles to see the output values, because ui_in is synchronized over two clocks,
+        # and a further clock is required for the output to propagate.
+        await ClockCycles(dut.clk, 3)
+
+        done = 0 
+        while done == 0:
+            await ClockCycles(dut.clk, 100)
+            status =  await tqv.read_word_reg(0x24)
+            done = status & 2
+
+        reg_offset = 0x28
+        result = "" 
+        for word in range(4):
+            result_slice = word*8
+            reg_addr = (3-word)*4 + reg_offset
+            result_word = await tqv.read_word_reg(reg_addr)
+            result += f"{result_word:08x}"
+
+
+        if (expected_result.hex() != result): 
+            print("ERROR: %s not equal to %s"%(expected_result.hex(),result))
+        assert expected_result.hex() == result
+
+
+
+
+
 

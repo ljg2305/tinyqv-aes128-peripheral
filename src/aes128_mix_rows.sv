@@ -1,4 +1,7 @@
+import aes128_type_pkg::*;
+
 module aes128_mix_rows (
+    input  mode_t         mode_i, 
     input  logic [127:0]  data_i, 
     output logic [127:0]  data_o
     );

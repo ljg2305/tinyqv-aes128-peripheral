@@ -73,7 +73,7 @@ module aes128_peripheral (
     logic [127:0] result; 
 
     
-    assign word_address = address[3:0];
+    assign word_address = address[5:2];
 
     always_ff @(posedge clk) begin
         if (!rst_n) begin
@@ -113,8 +113,8 @@ module aes128_peripheral (
     endgenerate
     assign register_out[9]    = {30'b0,valid,ready};
     assign register_out[10]   = result[31:0];
-    assign register_out[11]   = result[62:31];
-    assign register_out[12]   = result[95:63];
+    assign register_out[11]   = result[63:32];
+    assign register_out[12]   = result[95:64];
     assign register_out[13]   = result[127:96];
 
     // LOGIC 

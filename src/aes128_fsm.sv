@@ -47,14 +47,29 @@ module aes128_fsm #(
     logic [7:0] sbox_data_in;
 
     // ENCRYPT DECRYPT MODE SIG
-    mode_t mode;
-    //TODO remove hard coding capture mode on start_i
-    assign mode = ENCRYPT;
+    mode_t mode, mode_next;
+    
    
     // KEY_EXPANSION
     logic [127:0] add_round_key_data; 
     logic         add_round_key_valid; 
     logic         add_round_Ket_request;
+
+    // MODE LOGIC
+    always_comb begin 
+        case (op_i)
+            2'b0 : mode_next = ENCRYPT; 
+            2'b1 : mode_next = DECRYPT; 
+            default : mode_next = ENCRYPT; 
+        endcase
+    end 
+    always_ff @(posedge clk_i) begin
+        if (!rst_n_i) begin
+            mode <= ENCRYPT;
+        end else begin
+            if (current_state == WAIT && start_i) mode <= mode_next; 
+        end
+    end
 
     // MAIN STATE MACHINE
     always_ff @(posedge clk_i) begin
@@ -148,6 +163,7 @@ module aes128_fsm #(
     aes128_sub_bytes #(.EXTERNAL_SBOX(EXTERNAL_SBOX)) aes128_sub_bytes_inst   (
         .clk_i(clk_i), 
         .rst_n_i(rst_n_i),
+        .mode_i(mode),
         .data_i(working_data), 
         .start_i(sub_byte_start), 
         .data_o(sub_byte_data), 
@@ -160,6 +176,7 @@ module aes128_fsm #(
 
     // MIX ROWS MODULE INST 
     aes128_mix_rows aes128_mix_rows_inst (
+        .mode_i(mode),
         .data_i(working_data), 
         .data_o(mix_rows_data) 
     );
@@ -200,7 +217,10 @@ module aes128_fsm #(
      generate
         if (EXTERNAL_SBOX) begin 
             assign sbox_data_in = (current_state == SUB_BYTES) ? sub_byte_sbox_data_out : add_round_sbox_data_in;
+            //for key expansion we always want to use the encrypt sbox
+            assign sbox_mode    = (current_state == SUB_BYTES) ? mode : ENCRYPT;
             aes128_rijndael_sbox aes128_rijndael_sbox_inst (
+                .mode_i(mode),
                 .data_i(sbox_data_in),
                 .data_o(sbox_data_out)
             );

@@ -143,6 +143,7 @@ module aes128_key_expansion #(
     aes128_sub_bytes  #(.EXTERNAL_SBOX(EXTERNAL_SBOX), .N_BYTES(WORD_LENGTH)) aes128_sub_bytes_inst (
         .clk_i(clk_i), 
         .rst_n_i(rst_n_i),
+        .mode_i(ENCRYPT),
         .data_i(working_manip), 
         .start_i(sub_byte_start), 
         .data_o(sub_byte_data), 

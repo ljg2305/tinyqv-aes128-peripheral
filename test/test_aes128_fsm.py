@@ -10,6 +10,7 @@ from cocotb.triggers import RisingEdge
 from tqv import TinyQV
 
 from aes_support_funcs import *
+from Crypto.Cipher import AES
 
 @cocotb.test()
 async def test_aes128_sub_bytes(dut):
@@ -39,6 +40,9 @@ async def test_aes128_sub_bytes(dut):
         data_ba = bytearray.fromhex(data)
 
         expected_out = aes_encryption(data_ba, key_ba)
+        cipher = AES.new(key_ba, AES.MODE_ECB)
+        expected_crypto_out = cipher.encrypt(data_ba)
+
         dut.op_i.value = 0
 
         dut.start_i.value = 1
@@ -54,6 +58,7 @@ async def test_aes128_sub_bytes(dut):
 
 
         print(expected_out.hex()) 
+        print(expected_crypto_out.hex()) 
         print(result_out.hex()) 
         if (expected_out != result_out): 
             print("ERROR: %s not equal to %s")
