@@ -9,6 +9,8 @@ module aes128_mix_rows (
     localparam NUM_ROWS = 4;
     localparam NUM_COLS = 4;
 
+    logic [127:0] data_encrypt, data_decrypt; 
+
     genvar row; 
     genvar col; 
     generate 
@@ -17,14 +19,24 @@ module aes128_mix_rows (
             localparam logic [1:0] BottomAddr = row; 
             for (col = 0; col < NUM_COLS; col++) begin 
                 localparam logic [1:0] TopAddr = col;
-                localparam logic [1:0] TopAddrShift = col - Shift; 
+                localparam logic [1:0] TopAddrShiftLeft = col - Shift; 
+                localparam logic [1:0] TopAddrShiftRight = col + Shift; 
                 localparam logic [3:0] Addr = {TopAddr,BottomAddr};
-                localparam logic [3:0] ShiftAddr = {TopAddrShift,BottomAddr};
-                assign data_o[ShiftAddr*8+:8] = data_i[Addr*8+:8];
+                localparam logic [3:0] ShiftAddrLeft = {TopAddrShiftLeft,BottomAddr};
+                localparam logic [3:0] ShiftAddrRight = {TopAddrShiftRight,BottomAddr};
+                assign data_encrypt[ShiftAddrLeft*8+:8] = data_i[Addr*8+:8];
+                assign data_decrypt[ShiftAddrRight*8+:8] = data_i[Addr*8+:8];
             end 
         end 
     endgenerate
         
+    always_comb begin
+        unique case (mode_i)
+            ENCRYPT: data_o = data_encrypt;
+            DECRYPT: data_o = data_decrypt;
+            default: data_o = data_encrypt;
+        endcase
+    end
         
 
 endmodule 
