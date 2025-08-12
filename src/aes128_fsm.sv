@@ -45,6 +45,7 @@ module aes128_fsm #(
     logic [7:0] sbox_data_out;
     logic [7:0] add_round_sbox_data_in;
     logic [7:0] sbox_data_in;
+    logic       sbox_mode; 
 
     // ENCRYPT DECRYPT MODE SIG
     mode_t mode, mode_next;
@@ -53,7 +54,14 @@ module aes128_fsm #(
     // KEY_EXPANSION
     logic [127:0] add_round_key_data; 
     logic         add_round_key_valid; 
-    logic         add_round_Ket_request;
+    logic         add_round_key_request;
+    logic [127:0] initial_key;
+    logic         key_exp_start;
+    logic         key_exp_request;
+    logic         key_exp_valid; 
+    logic [3:0]   key_counter;
+    logic         decrypt_key_request;
+    enum int unsigned { KEY_WAIT, DECRYPT_KEY_STATE} key_state;
 
     // MODE LOGIC
     always_comb begin 
@@ -196,19 +204,73 @@ module aes128_fsm #(
     );
 
     // KEY EXPANSION 
-    
+   
+    // KEY DATA REG CONTROL
+    always_ff @(posedge clk_i) begin
+        if (!rst_n_i) begin
+            key_state <= KEY_WAIT;
+
+            initial_key <= 128'b0;
+            key_exp_start <= 1'b0;
+            key_counter <= 4'b0; 
+            decrypt_key_request <= 1'b0; 
+        end else begin
+            key_exp_start <= 1'b0;
+            decrypt_key_request <= 1'b0; 
+            case (key_state)  
+                KEY_WAIT: begin  
+                    if (start_i) begin 
+                        key_exp_start <= 1'b1;
+                        initial_key <= key_i;
+                    end 
+                    if (start_i || add_round_key_request) begin 
+                        if (mode_next == DECRYPT) begin 
+                            key_exp_start <= 1'b1;
+                            key_counter <= '0; 
+                            key_state <= DECRYPT_KEY_STATE; 
+                        end 
+                    end
+                end 
+                DECRYPT_KEY_STATE: begin 
+                    if (key_counter == 10-round_counter) begin 
+                        key_state <= WAIT; 
+                    end else if (key_exp_valid && !decrypt_key_request) begin 
+                        decrypt_key_request <= 1'b1; 
+                        key_counter <= key_counter+1;
+                    end 
+                end 
+            endcase
+        end 
+    end
+
     // single cycle request pulse when main FSM transtions away from
     // sub_bytes. 
-    
     assign add_round_key_request = (current_state == SUB_BYTES && next_state != SUB_BYTES); 
+    always_comb begin 
+        case (mode) 
+            ENCRYPT: begin 
+                key_exp_request = add_round_key_request;
+                add_round_key_valid = key_exp_valid; 
+            end 
+            DECRYPT: begin 
+                key_exp_request = decrypt_key_request;
+                add_round_key_valid = (key_counter == 10-round_counter) && (key_exp_valid && !decrypt_key_request); 
+            end
+            default: begin 
+                key_exp_request = add_round_key_request;
+                add_round_key_valid = key_exp_valid; 
+            end 
+        endcase
+    end 
+
     aes128_key_expansion #(.EXTERNAL_SBOX(EXTERNAL_SBOX)) aes128_key_expansion_inst (
         .clk_i(clk_i), 
         .rst_n_i(rst_n_i),
-        .key_i(key_i), 
-        .start_i(start_i), 
-        .key_req_i(add_round_key_request), 
+        .key_i(initial_key), 
+        .start_i(key_exp_start), 
+        .key_req_i(key_exp_request), 
         .key_o(add_round_key_data), 
-        .valid_o(add_round_key_valid), 
+        .valid_o(key_exp_valid), 
         .sbox_sub_o(add_round_sbox_data_in), 
         .sbox_sub_i(sbox_data_out)
         );
@@ -220,7 +282,7 @@ module aes128_fsm #(
             //for key expansion we always want to use the encrypt sbox
             assign sbox_mode    = (current_state == SUB_BYTES) ? mode : ENCRYPT;
             aes128_rijndael_sbox aes128_rijndael_sbox_inst (
-                .mode_i(mode),
+                .mode_i(sbox_mode),
                 .data_i(sbox_data_in),
                 .data_o(sbox_data_out)
             );

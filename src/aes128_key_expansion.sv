@@ -54,7 +54,7 @@ module aes128_key_expansion #(
     logic [1:0] xor_count; 
 
     // KEY FLIP
-    logic [128:0] input_key; 
+    logic [127:0] input_key; 
     assign input_key = aes_reverse_bytes(key_i);
 
     // MAIN STATE MACHINE

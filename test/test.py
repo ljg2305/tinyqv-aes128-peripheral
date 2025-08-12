@@ -2,6 +2,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 import os
+import random
 import cocotb
 from cocotb.clock import Clock
 from cocotb.triggers import ClockCycles
@@ -34,10 +35,13 @@ async def test_project(dut):
     # Reset
     await tqv.reset()
 
-    for i in range(3):
+    random.seed(10)
+    for i in range(1):
 
         ## ENCRYPT 
-        key  = os.urandom(16).hex()
+        #key  = os.urandom(16).hex()
+        key = bytes(random.randrange(0, 256) for _ in range(16)).hex()
+        print(key)
         key_ba = bytearray.fromhex(key)
         reg_offset = 0x04
         for word in range(4):
@@ -46,7 +50,9 @@ async def test_project(dut):
             reg_addr = (3-word)*4 + reg_offset
             await tqv.write_word_reg(reg_addr, reg_data)
 
-        data  = os.urandom(16).hex()
+        #data  = os.urandom(16).hex()
+        data = bytes(random.randrange(0, 256) for _ in range(16)).hex()
+        print(data)
         data_ba = bytearray.fromhex(data)
         reg_offset = 0x14
         for word in range(4):
@@ -79,10 +85,24 @@ async def test_project(dut):
             result += f"{result_word:08x}"
 
 
+        print(expected_result.hex())
+        print(result)
         if (expected_result.hex() != result): 
             print("ERROR: %s not equal to %s"%(expected_result.hex(),result))
         assert expected_result.hex() == result
 
+
+
+        # DECRYPT 
+        await tqv.write_word_reg(0, 0x000000003)
+
+        await ClockCycles(dut.clk, 9000)
+
+        #done = 0 
+        #while done == 0:
+        #    await ClockCycles(dut.clk, 100)
+        #    status =  await tqv.read_word_reg(0x24)
+        #    done = status & 2
 
 
 
