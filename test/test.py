@@ -36,7 +36,7 @@ async def test_project(dut):
     await tqv.reset()
 
     random.seed(10)
-    for i in range(1):
+    for i in range(4):
 
         ## ENCRYPT 
         #key  = os.urandom(16).hex()
@@ -85,16 +85,17 @@ async def test_project(dut):
             result += f"{result_word:08x}"
 
 
-        print(expected_result.hex())
-        print(result)
+        print("encrypt expected: %s"%expected_result.hex())
+        print("encrypt result  : %s"%result)
         if (expected_result.hex() != result): 
             print("ERROR: %s not equal to %s"%(expected_result.hex(),result))
         assert expected_result.hex() == result
 
+        continue
+
 
         # DECRYPT 
         data = expected_result.hex()
-        print(data)
         data_ba = bytearray.fromhex(data)
         reg_offset = 0x14
         for word in range(4):
@@ -105,17 +106,28 @@ async def test_project(dut):
 
         await tqv.write_word_reg(0, 0x000000003)
         expected_result = cipher.decrypt(data_ba)
-        print(expected_result.hex())
 
-        await ClockCycles(dut.clk, 9000)
+        await ClockCycles(dut.clk, 3)
 
-        #done = 0 
-        #while done == 0:
-        #    await ClockCycles(dut.clk, 100)
-        #    status =  await tqv.read_word_reg(0x24)
-        #    done = status & 2
+        done = 0 
+        while done == 0:
+            await ClockCycles(dut.clk, 100)
+            status =  await tqv.read_word_reg(0x24)
+            done = status & 2
+
+        reg_offset = 0x28
+        result = "" 
+        for word in range(4):
+            result_slice = word*8
+            reg_addr = (3-word)*4 + reg_offset
+            result_word = await tqv.read_word_reg(reg_addr)
+            result += f"{result_word:08x}"
 
 
-
+        print("decrypt expected: %s"%expected_result.hex())
+        print("decrypt result  : %s"%result)
+        if (expected_result.hex() != result): 
+            print("ERROR: %s not equal to %s"%(expected_result.hex(),result))
+        assert expected_result.hex() == result
 
 

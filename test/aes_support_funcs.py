@@ -246,18 +246,28 @@ def aes_decryption(cipher: bytes, key: bytes) -> bytes:
         nr = 14
 
     state = state_from_bytes(cipher)
+    print("".join(['{:02X}'.format(b) for r in state for b in r][::-1]))
     key_schedule = key_expansion(key)
     add_round_key(state, key_schedule, round=nr)
+    print("".join(['{:02X}'.format(b) for r in state for b in r][::-1]))
 
     for round in range(nr-1, 0, -1):
         inv_shift_rows(state)
+        print("SHIFT_ROWS: %s "%"".join(['{:02X}'.format(b) for r in state for b in r][::-1]))
         inv_sub_bytes(state)
+        print("sub_bytes : %s "%"".join(['{:02x}'.format(b) for r in state for b in r][::-1]))
         add_round_key(state, key_schedule, round)
+        print("ADD_KEY   : %s "%"".join(['{:02X}'.format(b) for r in state for b in r][::-1]))
         inv_mix_columns(state)
+        print("MIX_COL   : %s "%"".join(['{:02X}'.format(b) for r in state for b in r][::-1]))
+        print()
 
     inv_shift_rows(state)
+    print("SHIFT_ROWS: %s "%"".join(['{:02X}'.format(b) for r in state for b in r][::-1]))
     inv_sub_bytes(state)
+    print("SHIFT_ROWS: %s "%"".join(['{:02X}'.format(b) for r in state for b in r][::-1]))
     add_round_key(state, key_schedule, round=0)
+    print("ADD_KEY   : %s "%"".join(['{:02X}'.format(b) for r in state for b in r][::-1]))
 
     plain = bytes_from_state(state)
     return plain

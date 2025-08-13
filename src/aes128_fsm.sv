@@ -277,7 +277,7 @@ module aes128_fsm #(
             end 
             DECRYPT: begin 
                 key_exp_request = decrypt_key_request;
-                add_round_key_valid = (key_counter == 10-round_counter) && (key_exp_valid && !decrypt_key_request); 
+                add_round_key_valid = (key_counter == 10-round_counter) && (key_exp_valid && !decrypt_key_request &&!key_exp_start); 
             end
             default: begin 
                 key_exp_request = add_round_key_request;
