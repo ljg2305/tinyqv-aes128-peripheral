@@ -91,22 +91,31 @@ module aes128_fsm #(
     always_comb begin 
         //DEFAULTS
         next_state = current_state;
-        case (current_state) 
-            WAIT:   if (start_i) next_state = ADD_ROUND_KEY;
-            SUB_BYTES: begin 
+        case ({mode,current_state}) 
+            {ENCRYPT,WAIT}, {DECRYPT,WAIT}:   if (start_i) next_state = ADD_ROUND_KEY;
+            {ENCRYPT,SUB_BYTES}: begin 
                 if (sub_byte_done) next_state = MIX_ROWS; 
             end 
-            MIX_ROWS: begin 
+            {DECRYPT,SUB_BYTES}: begin 
+                if (sub_byte_done) next_state = ADD_ROUND_KEY;
+            end 
+            {ENCRYPT,MIX_ROWS}: begin 
                 if (round_counter == 10) begin 
                     next_state = ADD_ROUND_KEY;
                 end else begin 
                     next_state = MIX_COLUMNS;
                 end 
             end
-            MIX_COLUMNS: begin
+            {DECRYPT,MIX_ROWS}: begin 
+                next_state = SUB_BYTES;
+            end
+            {ENCRYPT,MIX_COLUMNS}: begin 
                 if (mix_column_done) next_state = ADD_ROUND_KEY; 
             end 
-            ADD_ROUND_KEY: begin 
+            {DECRYPT,MIX_COLUMNS}: begin 
+                if (mix_column_done) next_state = MIX_ROWS; 
+            end 
+            {ENCRYPT,ADD_ROUND_KEY}: begin 
                 if (add_round_key_valid) begin 
                     if (round_counter == 10) begin 
                         next_state = STORE_RESULT;
@@ -115,7 +124,20 @@ module aes128_fsm #(
                     end 
                 end
             end 
-            STORE_RESULT: next_state = WAIT; 
+            {DECRYPT,ADD_ROUND_KEY}: begin 
+                if (add_round_key_valid) begin 
+                    if (round_counter == 10) begin 
+                        next_state = STORE_RESULT;
+                    end else if (round_counter == 0) begin 
+                        next_state = MIX_ROWS; 
+                    end else  begin 
+                        next_state = MIX_COLUMNS; 
+                    end 
+                end
+            end 
+            {ENCRYPT,STORE_RESULT}, {DECRYPT,STORE_RESULT}: begin 
+                next_state = WAIT; 
+            end 
         endcase
     end 
 
@@ -206,6 +228,7 @@ module aes128_fsm #(
     // KEY EXPANSION 
    
     // KEY DATA REG CONTROL
+    // ideally this would live in a submodule to keep things neat 
     always_ff @(posedge clk_i) begin
         if (!rst_n_i) begin
             key_state <= KEY_WAIT;
