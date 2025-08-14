@@ -128,21 +128,28 @@ def aes_encryption(data: bytes, key: bytes) -> bytes:
         nr = 14
 
     state = state_from_bytes(data)
-
+    print("START:%s"%"".join(['{:02X}'.format(b) for r in state for b in r][::-1]))
     key_schedule = key_expansion(key)
-
     add_round_key(state, key_schedule, round=0)
-    #print("".join(['{:02X}'.format(b) for r in state for b in r][::-1]))
+    print("".join(['{:02X}'.format(b) for r in state for b in r][::-1]))
 
     for round in range(1, nr):
         sub_bytes(state)
+        print("SUB_BYTES : %s "%"".join(['{:02x}'.format(b) for r in state for b in r][::-1]))
         shift_rows(state)
+        print("SHIFT_ROWS: %s "%"".join(['{:02X}'.format(b) for r in state for b in r][::-1]))
         mix_columns(state)
+        print("MIX_COL   : %s "%"".join(['{:02X}'.format(b) for r in state for b in r][::-1]))
         add_round_key(state, key_schedule, round)
+        print("ADD_KEY   : %s "%"".join(['{:02X}'.format(b) for r in state for b in r][::-1]))
+        print()
 
     sub_bytes(state)
+    print("SUB_BYTES : %s "%"".join(['{:02x}'.format(b) for r in state for b in r][::-1]))
     shift_rows(state)
+    print("SHIFT_ROWS: %s "%"".join(['{:02X}'.format(b) for r in state for b in r][::-1]))
     add_round_key(state, key_schedule, round=nr)
+    print("ADD_KEY   : %s "%"".join(['{:02X}'.format(b) for r in state for b in r][::-1]))
 
     cipher = bytes_from_state(state)
     return cipher
@@ -246,7 +253,7 @@ def aes_decryption(cipher: bytes, key: bytes) -> bytes:
         nr = 14
 
     state = state_from_bytes(cipher)
-    print("".join(['{:02X}'.format(b) for r in state for b in r][::-1]))
+    print("".join(['{:02x}'.format(b) for r in state for b in r][::-1]))
     key_schedule = key_expansion(key)
     add_round_key(state, key_schedule, round=nr)
     print("".join(['{:02X}'.format(b) for r in state for b in r][::-1]))
@@ -255,7 +262,7 @@ def aes_decryption(cipher: bytes, key: bytes) -> bytes:
         inv_shift_rows(state)
         print("SHIFT_ROWS: %s "%"".join(['{:02X}'.format(b) for r in state for b in r][::-1]))
         inv_sub_bytes(state)
-        print("sub_bytes : %s "%"".join(['{:02x}'.format(b) for r in state for b in r][::-1]))
+        print("SUB_BYTES : %s "%"".join(['{:02x}'.format(b) for r in state for b in r][::-1]))
         add_round_key(state, key_schedule, round)
         print("ADD_KEY   : %s "%"".join(['{:02X}'.format(b) for r in state for b in r][::-1]))
         inv_mix_columns(state)

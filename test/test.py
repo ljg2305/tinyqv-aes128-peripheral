@@ -36,12 +36,12 @@ async def test_project(dut):
     await tqv.reset()
 
     random.seed(10)
-    for i in range(4):
+    for i in range(12):
 
         ## ENCRYPT 
         #key  = os.urandom(16).hex()
         key = bytes(random.randrange(0, 256) for _ in range(16)).hex()
-        print(key)
+        print("KEY: %s"%key)
         key_ba = bytearray.fromhex(key)
         reg_offset = 0x04
         for word in range(4):
@@ -63,7 +63,7 @@ async def test_project(dut):
 
         cipher = AES.new(key_ba, AES.MODE_ECB)
         expected_result = cipher.encrypt(data_ba)
-        expected_out = aes_encryption(data_ba, key_ba)
+        #expected_out = aes_encryption(data_ba, key_ba)
 
         await tqv.write_word_reg(0, 0x000000001)
         # Wait for two clock cycles to see the output values, because ui_in is synchronized over two clocks,
@@ -90,9 +90,6 @@ async def test_project(dut):
         if (expected_result.hex() != result): 
             print("ERROR: %s not equal to %s"%(expected_result.hex(),result))
         assert expected_result.hex() == result
-
-        continue
-
 
         # DECRYPT 
         data = expected_result.hex()

@@ -273,7 +273,7 @@ module aes128_fsm #(
         case (mode) 
             ENCRYPT: begin 
                 key_exp_request = add_round_key_request;
-                add_round_key_valid = key_exp_valid; 
+                add_round_key_valid = key_exp_valid && !key_exp_start; 
             end 
             DECRYPT: begin 
                 key_exp_request = decrypt_key_request;
