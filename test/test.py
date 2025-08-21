@@ -38,8 +38,10 @@ async def test_project(dut):
     random.seed(10)
     for i in range(12):
 
+        interrupt_en = 1; 
+
         ## ENCRYPT 
-        #key  = os.urandom(16).hex()
+        # WRITE KEY
         key = bytes(random.randrange(0, 256) for _ in range(16)).hex()
         print("KEY: %s"%key)
         key_ba = bytearray.fromhex(key)
@@ -50,9 +52,8 @@ async def test_project(dut):
             reg_addr = (3-word)*4 + reg_offset
             await tqv.write_word_reg(reg_addr, reg_data)
 
-        #data  = os.urandom(16).hex()
+        # WRITE DATA
         data = bytes(random.randrange(0, 256) for _ in range(16)).hex()
-        print(data)
         data_ba = bytearray.fromhex(data)
         reg_offset = 0x14
         for word in range(4):
@@ -61,21 +62,25 @@ async def test_project(dut):
             reg_addr = (3-word)*4 + reg_offset
             await tqv.write_word_reg(reg_addr, reg_data)
 
+        # CALCULATE EXPECTED 
         cipher = AES.new(key_ba, AES.MODE_ECB)
         expected_result = cipher.encrypt(data_ba)
-        #expected_out = aes_encryption(data_ba, key_ba)
 
-        await tqv.write_word_reg(0, 0x000000001)
-        # Wait for two clock cycles to see the output values, because ui_in is synchronized over two clocks,
-        # and a further clock is required for the output to propagate.
+        # START ENCRYPT 
+        # start by writing 1 to addr 0 
+        reg_data = ctrl_reg(start=1,op=0,interrupt_en=interrupt_en)
+        print(reg_data)
+        await tqv.write_word_reg(0, reg_data)
         await ClockCycles(dut.clk, 3)
 
+        # AWAIT RESULT 
         done = 0 
         while done == 0:
             await ClockCycles(dut.clk, 100)
             status =  await tqv.read_word_reg(0x24)
             done = status & 2
 
+        # READ RESULT 
         reg_offset = 0x28
         result = "" 
         for word in range(4):
@@ -85,13 +90,28 @@ async def test_project(dut):
             result += f"{result_word:08x}"
 
 
+        # CHECK RESULT 
         print("encrypt expected: %s"%expected_result.hex())
         print("encrypt result  : %s"%result)
         if (expected_result.hex() != result): 
             print("ERROR: %s not equal to %s"%(expected_result.hex(),result))
         assert expected_result.hex() == result
 
-        # DECRYPT 
+        # CHECK INTERRUPT  
+        assert await tqv.is_interrupt_asserted()
+        # Interrupt doesn't clear
+        await ClockCycles(dut.clk, 10)
+        assert await tqv.is_interrupt_asserted()
+        # Write bottom bit of address 8 high to clear
+        ctrl_read  = await tqv.read_word_reg(0)
+        clear_data = ctrl_read | (1<<7) 
+        await tqv.write_byte_reg(0, clear_data)
+        assert not await tqv.is_interrupt_asserted()
+
+
+        ## DECRYPT 
+
+        # WRITE DATA
         data = expected_result.hex()
         data_ba = bytearray.fromhex(data)
         reg_offset = 0x14
@@ -101,17 +121,24 @@ async def test_project(dut):
             reg_addr = (3-word)*4 + reg_offset
             await tqv.write_word_reg(reg_addr, reg_data)
 
-        await tqv.write_word_reg(0, 0x000000003)
-        expected_result = cipher.decrypt(data_ba)
 
+        # START DECRYPT 
+        # start by writing 1 and set op to 1 to addr 0 
+        reg_data = ctrl_reg(start=1,op=1,interrupt_en=interrupt_en)
+        await tqv.write_word_reg(0, reg_data)
+
+        # CALCULATE EXPECTED 
+        expected_result = cipher.decrypt(data_ba)
         await ClockCycles(dut.clk, 3)
 
+        # AWAIT RESULT 
         done = 0 
         while done == 0:
             await ClockCycles(dut.clk, 100)
             status =  await tqv.read_word_reg(0x24)
             done = status & 2
 
+        # READ RESULT 
         reg_offset = 0x28
         result = "" 
         for word in range(4):
@@ -121,10 +148,39 @@ async def test_project(dut):
             result += f"{result_word:08x}"
 
 
+        # CHECK RESULT 
         print("decrypt expected: %s"%expected_result.hex())
         print("decrypt result  : %s"%result)
         if (expected_result.hex() != result): 
             print("ERROR: %s not equal to %s"%(expected_result.hex(),result))
         assert expected_result.hex() == result
 
+        # CHECK INTERRUPT  
+        assert await tqv.is_interrupt_asserted()
+        # Interrupt doesn't clear
+        await ClockCycles(dut.clk, 10)
+        assert await tqv.is_interrupt_asserted()
+        # Write bottom bit of address 8 high to clear
+        ctrl_read  = await tqv.read_word_reg(0)
+        clear_data = ctrl_read | (1<<7) 
+        await tqv.write_byte_reg(0, clear_data)
+        assert not await tqv.is_interrupt_asserted()
 
+def ctrl_reg(start=None,op=None,interrupt_en=None,reg_data=0):
+    # bit 0 
+    if start != None: 
+        reg_data = reg_data | start
+    # bit 1 to 2 
+    if op != None: 
+        #mask op bits 
+        mask = 0b11111111111111111111111111111001 
+        reg_data = reg_data & mask
+        reg_data = reg_data | (op << 1)
+    #bit 3
+    if interrupt_en != None: 
+        #mask op bits 
+        mask = 0b11111111111111111111111111110111 
+        reg_data = reg_data & mask
+        reg_data = reg_data | (interrupt_en << 3)
+
+    return reg_data

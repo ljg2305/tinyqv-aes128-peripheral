@@ -36,8 +36,9 @@ module aes128_peripheral (
     // | Addr |  Name   | Width  |                               Desc                                |
     // +------+---------+--------+-------------------------------------------------------------------+
     // | READ WRITE                                                                                  |
-    // | 0x00 | CTRL    | 32     | Bit 0; Start (flappy) Bit 1-2; Operation (Encrypt,Decrypt),       |
+    // | 0x00 | CTRL    | 32-bit | Bit 0; Start (flappy) Bit 1-2; Operation (Encrypt,Decrypt),       |
     // |      |         |        | Bit 3; Interrupt Enable                                           |
+    // |      |         |        | Bit 7; Interrupt Clear
     // | 0x04 | KEY0    | 32-bit | AES Key [31:0]                                                    |
     // | 0x08 | KEY1    | 32-bit | AES Key [63:32]                                                   |
     // | 0x0C | KEY2    | 32-bit | AES Key [95:64]                                                   |
@@ -71,6 +72,9 @@ module aes128_peripheral (
     logic valid; 
     logic ready; 
     logic [127:0] result; 
+
+    logic valid_reg; 
+    logic done_interrupt; 
 
     
     assign word_address = address[5:2];
@@ -130,12 +134,28 @@ module aes128_peripheral (
         .ready_o(ready) 
         );
 
+
+    // User Interrupt
+    always_ff @(posedge clk) begin
+        if (!rst_n) begin 
+            valid_reg <= 1'b0; 
+            done_interrupt <= 1'b0;
+        end else begin 
+            valid_reg <= valid; 
+            if (valid && !valid_reg) begin 
+                done_interrupt <= 1'b1; 
+            end else if (address == 6'h0 && data_write_n != 2'b11 && data_in[7]) begin
+                done_interrupt <= 1'b0;
+            end
+        end 
+    end 
+
     // IO 
     //
     // All reads complete in 1 clock
     assign data_ready = 1;
 
-    assign user_interrupt = 1'b0;
+    assign user_interrupt = interrupt_en ? done_interrupt : 1'b0;
 
     // List all unused inputs to prevent warnings
     // data_read_n is unused as none of our behaviour depends on whether
